@@ -1,6 +1,5 @@
 """Listing use cases: search, detail, CRUD by staff, photos and status changes."""
 
-import secrets
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -58,7 +57,7 @@ class PropertyService:
         values = data.model_dump(exclude={"agency_id", "agent_id"})
         prop = Property(
             **values,
-            reference=self._new_reference(),
+            reference=self.properties.new_reference(),
             agency_id=agency_id,
             agent_id=agent_id,
             status=PropertyStatus.AVAILABLE,
@@ -160,9 +159,3 @@ class PropertyService:
         agent = self.users.get(agent_id)
         if not isinstance(agent, Agent) or agent.agency_id != agency_id:
             raise BusinessRuleError("L'agent doit appartenir à l'agence du bien.")
-
-    def _new_reference(self) -> str:
-        while True:
-            reference = f"YM{datetime.now(UTC):%y}-{secrets.token_hex(3).upper()}"
-            if self.properties.get_by_reference(reference) is None:
-                return reference
