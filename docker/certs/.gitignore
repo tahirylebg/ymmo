@@ -1,0 +1,3 @@
+# Local root CAs for TLS-inspecting proxies/antivirus. Never committed.
+*.crt
+*.pem
