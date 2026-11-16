@@ -9,7 +9,9 @@ are skipped unless TEST_POSTGRES_URL is set, e.g. inside docker compose:
 """
 
 import os
+import tempfile
 
+os.environ.setdefault("MEDIA_DIR", tempfile.mkdtemp(prefix="ymmo-media-"))
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 os.environ.setdefault("SEED_ON_STARTUP", "false")
@@ -41,6 +43,13 @@ def db() -> Iterator[Session]:
     finally:
         session.rollback()
         session.close()
+
+
+def auth_headers(user) -> dict[str, str]:
+    """Bearer header for a user created directly in the database."""
+    from app.core.security import create_access_token
+
+    return {"Authorization": f"Bearer {create_access_token(user.id, user.role.value)}"}
 
 
 @pytest.fixture
