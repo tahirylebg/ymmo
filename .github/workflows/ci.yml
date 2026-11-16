@@ -20,5 +20,19 @@ jobs:
         run: ruff check .
       - name: Format check (black)
         run: black --check .
-      - name: Tests (pytest)
+      - name: Tests (pytest, SQLite + PostgreSQL views)
+        env:
+          TEST_POSTGRES_URL: postgresql+psycopg://ymmo:ymmo@localhost:5432/ymmo_test
         run: pytest --cov=app --cov=analytics --cov-report=term-missing
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ymmo
+          POSTGRES_PASSWORD: ymmo
+          POSTGRES_DB: ymmo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ymmo" --health-interval 5s --health-timeout 3s
+          --health-retries 10
