@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "macros.html" import property_card %}
+{% block title %}Achat et vente de biens immobiliers{% endblock %}
+
+{% block hero %}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container">
+    <h1 id="hero-title">Trouvez le bien qui vous ressemble, partout en France</h1>
+    <p>{{ total_available }} biens résidentiels et professionnels à vendre dans nos 13 agences, avec une estimation de prix appuyée sur les ventes réelles du marché.</p>
+
+    <form class="search-panel" method="get" action="/biens" role="search" aria-label="Rechercher un bien">
+      <div class="form-grid">
+        <div class="field">
+          <label for="q-city">Ville ou code postal</label>
+          <input id="q-city" name="city" type="search" placeholder="Aix-en-Provence, 69003…" autocomplete="address-level2">
+        </div>
+        <div class="field">
+          <label for="q-category">Type de bien</label>
+          <select id="q-category" name="category">
+            <option value="">Tous</option>
+            {% for c in categories %}<option value="{{ c.value }}">{{ c|label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="q-max">Budget max (€)</label>
+          <input id="q-max" name="max_price" type="number" min="0" step="10000" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="q-rooms">Pièces min.</label>
+          <input id="q-rooms" name="min_rooms" type="number" min="0" max="20" inputmode="numeric">
+        </div>
+        <button class="btn" type="submit">Rechercher</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="section" aria-labelledby="latest-title">
+  <div class="section-head">
+    <h2 id="latest-title">Nouveautés</h2>
+    <a href="/biens">Voir tous les biens <span aria-hidden="true">→</span></a>
+  </div>
+  <ul class="card-grid">
+    {% for prop in latest %}
+      <li>{{ property_card(prop, user, favorite_ids, back='/') }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="section" aria-labelledby="why-title">
+  <h2 id="why-title">Pourquoi Ymmo ?</h2>
+  <ul class="features">
+    <li>
+      <h3>Estimation fondée sur les données</h3>
+      <p>Notre modèle compare votre bien à des milliers de ventes réelles pour proposer un prix juste.</p>
+      <a href="/estimer">Estimer mon bien</a>
+    </li>
+    <li>
+      <h3>Un agent dédié</h3>
+      <p>Visites, offres, compromis : votre agent local suit chaque étape et vous tient informé en ligne.</p>
+    </li>
+    <li>
+      <h3>Particuliers et professionnels</h3>
+      <p>Appartements, maisons, terrains, bureaux, locaux commerciaux et entrepôts.</p>
+    </li>
+  </ul>
+</section>
+
+<section class="section" aria-labelledby="agencies-title">
+  <h2 id="agencies-title">Nos {{ agencies|length }} agences</h2>
+  <ul class="agency-list">
+    {% for agency in agencies %}
+      <li><strong>{{ agency.city.name }}</strong>{% if agency.is_headquarters %} (siège){% endif %} · <a href="/biens?agency_id={{ agency.id }}">voir les biens</a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

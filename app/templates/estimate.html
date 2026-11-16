@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "macros.html" import field, select, form_errors %}
+{% block title %}Estimer et vendre mon bien{% endblock %}
+{% block content %}
+<h1>Estimer et vendre mon bien</h1>
+<p class="muted">Obtenez une estimation indicative immédiate, calculée à partir des ventes comparables. Envoyez ensuite votre demande : l'agence Ymmo la plus proche vous recontacte pour une estimation sur place.</p>
+
+{{ form_errors(errors) }}
+<div class="detail-layout">
+  <form method="post" action="/estimer" class="form-card" id="estimate-form" novalidate>
+    <div class="form-grid cols-2">
+      {{ select('property_type', 'Usage', property_types, values.get('property_type', 'residential'), errors, required=True) }}
+      {{ select('category', 'Type de bien', categories, values.get('category', 'apartment'), errors, required=True) }}
+      {{ field('surface_m2', 'Surface (m²)', values, errors, type='number', required=True, attrs='min="1" step="0.5" inputmode="decimal"') }}
+      {{ field('rooms', 'Nombre de pièces', values, errors, type='number', attrs='min="0" max="100" inputmode="numeric"') }}
+    </div>
+    {{ field('address', 'Adresse', values, errors, required=True, attrs='autocomplete="street-address"') }}
+    {{ select('city_id', 'Ville', cities, values.get('city_id'), errors, required=True, empty='Choisir une ville', display_attr='label') }}
+    {{ field('desired_price', 'Prix souhaité (€)', values, errors, type='number', hint='Facultatif', attrs='min="0" step="1000" inputmode="numeric"') }}
+    {{ field('message', 'Informations complémentaires', values, errors, type='textarea', attrs='maxlength="2000" rows="4"') }}
+    <div class="btn-row">
+      <button class="btn btn-secondary" type="button" data-estimate-preview hidden>Estimer maintenant</button>
+      {% if user and user.role.value == 'client' %}
+        <button class="btn" type="submit">Envoyer ma demande à une agence</button>
+      {% elif user %}
+        <p class="muted small">Le dépôt d'un bien est réservé aux comptes clients.</p>
+      {% else %}
+        <a class="btn" href="/connexion?next=/estimer">Se connecter pour envoyer la demande</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <aside class="panel" aria-labelledby="estimate-result-title">
+    <h2 id="estimate-result-title" class="h3">Estimation indicative</h2>
+    <p id="estimate-result" class="price-tag" aria-live="polite">—</p>
+    <p class="small muted">Calcul : prix moyen au m² des ventes comparables (même ville, sinon même département) multiplié par la surface, ou modèle de régression entraîné sur l'historique des ventes. Ce n'est pas un avis de valeur.</p>
+  </aside>
+</div>
+{% endblock %}
