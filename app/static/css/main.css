@@ -1,0 +1,30 @@
+/* Ymmo base stylesheet (mobile-first). Full design system comes in the frontend phase. */
+:root {
+  --color-bg: #ffffff;
+  --color-text: #1a1f2b;
+  --color-primary: #0b5c8a; /* 7.0:1 on white (WCAG AA/AAA for text) */
+  --color-focus: #f2a900;
+  --space: 1rem;
+  --radius: 0.5rem;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text); }
+.container { width: min(100% - 2rem, 72rem); margin-inline: auto; }
+
+.skip-link {
+  position: absolute; left: -999px; top: 0;
+  background: var(--color-primary); color: #fff; padding: 0.5rem 1rem; z-index: 100;
+}
+.skip-link:focus { left: 0; }
+:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+
+.site-header { background: var(--color-primary); color: #fff; padding-block: var(--space); }
+.site-header .brand { color: #fff; font-weight: 700; font-size: 1.25rem; text-decoration: none; }
+.site-footer { margin-top: 3rem; padding-block: var(--space); border-top: 1px solid #d5dae3; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
