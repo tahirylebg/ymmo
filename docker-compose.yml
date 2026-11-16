@@ -25,6 +25,7 @@ services:
         required: false
     environment:
       POSTGRES_HOST: db
+      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
     ports:
       - "8000:8000"
     volumes:
