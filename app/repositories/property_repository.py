@@ -1,5 +1,8 @@
 """Data access for listings, cities and agencies."""
 
+import secrets
+from datetime import UTC, datetime
+
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -29,6 +32,13 @@ class PropertyRepository(BaseRepository[Property]):
 
     def get_by_reference(self, reference: str) -> Property | None:
         return self.db.scalar(select(Property).where(Property.reference == reference))
+
+    def new_reference(self) -> str:
+        """Unique human-readable reference, e.g. YM26-3FA9C2."""
+        while True:
+            reference = f"YM{datetime.now(UTC):%y}-{secrets.token_hex(3).upper()}"
+            if self.get_by_reference(reference) is None:
+                return reference
 
     def search(self, filters: PropertyFilters) -> Page[Property]:
         stmt = self._base_query()
@@ -63,20 +73,15 @@ class PropertyRepository(BaseRepository[Property]):
         stmt = stmt.order_by(*_SORTS[filters.sort])
         return self.paginate(stmt, page=filters.page, size=filters.size)
 
-    def list_for_agent(self, agent_id: int) -> list[Property]:
-        stmt = (
-            self._base_query()
-            .where(Property.agent_id == agent_id)
-            .order_by(Property.status, Property.published_at.desc())
-        )
-        return list(self.db.scalars(stmt))
-
-    def list_for_agency(self, agency_id: int) -> list[Property]:
-        stmt = (
-            self._base_query()
-            .where(Property.agency_id == agency_id)
-            .order_by(Property.status, Property.published_at.desc())
-        )
+    def scoped(
+        self, *, agent_id: int | None = None, agency_id: int | None = None
+    ) -> list[Property]:
+        """Listings managed by a staff member (agent: own, manager: agency, admin: all)."""
+        stmt = self._base_query().order_by(Property.status, Property.published_at.desc())
+        if agent_id is not None:
+            stmt = stmt.where(Property.agent_id == agent_id)
+        if agency_id is not None:
+            stmt = stmt.where(Property.agency_id == agency_id)
         return list(self.db.scalars(stmt))
 
     def record_view(self, property_id: int, user_id: int | None) -> None:
