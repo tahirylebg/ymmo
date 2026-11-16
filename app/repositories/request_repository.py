@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.models import EstimationRequest, Favorite, Offer, Property, Visit
-from app.models.enums import EstimationStatus, OfferStatus, VisitStatus
+from app.models.enums import OfferStatus, VisitStatus
 from app.repositories.base import BaseRepository
 
 ACTIVE_VISIT_STATUSES = (VisitStatus.REQUESTED, VisitStatus.CONFIRMED)
@@ -44,16 +44,18 @@ class VisitRepository(BaseRepository[Visit]):
         stmt = self._query().where(Visit.client_id == client_id).order_by(Visit.scheduled_at.desc())
         return list(self.db.scalars(stmt))
 
-    def for_agent(self, agent_id: int) -> list[Visit]:
-        stmt = self._query().where(Visit.agent_id == agent_id).order_by(Visit.scheduled_at)
+    def scoped(self, *, agent_id: int | None = None, agency_id: int | None = None) -> list[Visit]:
+        """Visits seen by a staff member: their own (agent), their agency (manager) or all."""
+        stmt = self._query().join(Visit.listing).order_by(Visit.scheduled_at)
+        if agent_id is not None:
+            stmt = stmt.where(Visit.agent_id == agent_id)
+        if agency_id is not None:
+            stmt = stmt.where(Property.agency_id == agency_id)
         return list(self.db.scalars(stmt))
 
-    def for_agency(self, agency_id: int) -> list[Visit]:
-        stmt = (
-            self._query()
-            .join(Visit.listing)
-            .where(Property.agency_id == agency_id)
-            .order_by(Visit.scheduled_at)
+    def active_for_property(self, property_id: int) -> list[Visit]:
+        stmt = select(Visit).where(
+            Visit.property_id == property_id, Visit.status.in_(ACTIVE_VISIT_STATUSES)
         )
         return list(self.db.scalars(stmt))
 
@@ -83,22 +85,12 @@ class OfferRepository(BaseRepository[Offer]):
         stmt = self._query().where(Offer.property_id == property_id).order_by(Offer.amount.desc())
         return list(self.db.scalars(stmt))
 
-    def for_agent(self, agent_id: int) -> list[Offer]:
-        stmt = (
-            self._query()
-            .join(Offer.listing)
-            .where(Property.agent_id == agent_id)
-            .order_by(Offer.created_at.desc())
-        )
-        return list(self.db.scalars(stmt))
-
-    def for_agency(self, agency_id: int) -> list[Offer]:
-        stmt = (
-            self._query()
-            .join(Offer.listing)
-            .where(Property.agency_id == agency_id)
-            .order_by(Offer.created_at.desc())
-        )
+    def scoped(self, *, agent_id: int | None = None, agency_id: int | None = None) -> list[Offer]:
+        stmt = self._query().join(Offer.listing).order_by(Offer.created_at.desc())
+        if agent_id is not None:
+            stmt = stmt.where(Property.agent_id == agent_id)
+        if agency_id is not None:
+            stmt = stmt.where(Property.agency_id == agency_id)
         return list(self.db.scalars(stmt))
 
     def pending_for(self, client_id: int, property_id: int) -> Offer | None:
@@ -139,22 +131,8 @@ class EstimationRepository(BaseRepository[EstimationRequest]):
         )
         return list(self.db.scalars(stmt))
 
-    def for_agency(self, agency_id: int) -> list[EstimationRequest]:
-        stmt = (
-            self._query()
-            .where(EstimationRequest.agency_id == agency_id)
-            .order_by(EstimationRequest.status, EstimationRequest.created_at.desc())
-        )
-        return list(self.db.scalars(stmt))
-
-    def open_requests(self) -> list[EstimationRequest]:
-        stmt = (
-            self._query()
-            .where(
-                EstimationRequest.status.in_(
-                    (EstimationStatus.SUBMITTED, EstimationStatus.IN_REVIEW)
-                )
-            )
-            .order_by(EstimationRequest.created_at.desc())
-        )
+    def scoped(self, *, agency_id: int | None = None) -> list[EstimationRequest]:
+        stmt = self._query().order_by(EstimationRequest.status, EstimationRequest.created_at.desc())
+        if agency_id is not None:
+            stmt = stmt.where(EstimationRequest.agency_id == agency_id)
         return list(self.db.scalars(stmt))
