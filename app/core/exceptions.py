@@ -5,9 +5,17 @@ converts them into JSON responses or HTML error pages. This keeps the service la
 independent from the web framework (Dependency Inversion).
 """
 
+from urllib.parse import quote
+
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class DomainError(Exception):
@@ -47,9 +55,8 @@ class BusinessRuleError(DomainError):
 
 
 def _wants_html(request: Request) -> bool:
-    return not request.url.path.startswith("/api") and "text/html" in request.headers.get(
-        "accept", ""
-    )
+    """Pages (not /api) get HTML errors; the API always answers JSON."""
+    return not request.url.path.startswith("/api")
 
 
 def register_exception_handlers(app: FastAPI, templates: Jinja2Templates) -> None:
@@ -58,6 +65,10 @@ def register_exception_handlers(app: FastAPI, templates: Jinja2Templates) -> Non
     @app.exception_handler(DomainError)
     async def domain_error_handler(request: Request, exc: DomainError):
         if _wants_html(request):
+            if isinstance(exc, AuthenticationError):
+                # Pages behind a login redirect to the login form, then come back.
+                target = quote(request.url.path, safe="/")
+                return RedirectResponse(f"/connexion?next={target}", status_code=303)
             return templates.TemplateResponse(
                 request,
                 "error.html",
@@ -65,3 +76,25 @@ def register_exception_handlers(app: FastAPI, templates: Jinja2Templates) -> Non
                 status_code=exc.status_code,
             )
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error_handler(request: Request, exc: StarletteHTTPException):
+        if _wants_html(request) and exc.status_code in (404, 405):
+            return templates.TemplateResponse(
+                request,
+                "error.html",
+                {"status_code": 404, "message": "Cette page n'existe pas ou a été déplacée."},
+                status_code=404,
+            )
+        return await http_exception_handler(request, exc)
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError):
+        if _wants_html(request):  # e.g. /biens/abc
+            return templates.TemplateResponse(
+                request,
+                "error.html",
+                {"status_code": 404, "message": "Adresse invalide."},
+                status_code=404,
+            )
+        return await request_validation_exception_handler(request, exc)
