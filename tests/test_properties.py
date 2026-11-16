@@ -1,57 +1,11 @@
-from decimal import Decimal
 from io import BytesIO
 
 import pytest
 from PIL import Image
 
-from app.models import Admin, AgencyManager, PropertyView
-from app.models.enums import PropertyCategory, PropertyStatus, PropertyType
+from app.models import PropertyView
+from app.models.enums import PropertyStatus
 from tests.conftest import auth_headers
-from tests.factories import make_agency, make_agent, make_city, make_client, make_property
-
-
-@pytest.fixture
-def world(db):
-    """Two agencies, agents, a manager, an admin, a client and a few listings."""
-    aix = make_city(db, "Aix-en-Provence", "13100")
-    lyon = make_city(db, "Lyon", "69003")
-    aix_agency = make_agency(db, aix, code="AIX")
-    lyon_agency = make_agency(db, lyon, code="LYO")
-    agent = make_agent(db, aix_agency)
-    colleague = make_agent(db, aix_agency)
-    lyon_agent = make_agent(db, lyon_agency)
-    manager = AgencyManager(
-        email="manager@ymmo.test",
-        password_hash="x",
-        first_name="M",
-        last_name="Anager",
-        agency_id=aix_agency.id,
-    )
-    admin = Admin(email="admin@ymmo.test", password_hash="x", first_name="A", last_name="Dmin")
-    db.add_all([manager, admin])
-    client_user = make_client(db)
-    flat = make_property(db, aix_agency, agent, price=Decimal("250000"), surface_m2=50, rooms=2)
-    house = make_property(
-        db,
-        aix_agency,
-        colleague,
-        price=Decimal("600000"),
-        surface_m2=140,
-        rooms=5,
-        category=PropertyCategory.HOUSE,
-    )
-    office = make_property(
-        db,
-        lyon_agency,
-        lyon_agent,
-        price=Decimal("900000"),
-        surface_m2=300,
-        property_type=PropertyType.PROFESSIONAL,
-        category=PropertyCategory.OFFICE,
-        city_id=lyon.id,
-    )
-    db.commit()
-    return locals()
 
 
 def _payload(world, **overrides):

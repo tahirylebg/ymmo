@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.middleware import SecurityHeadersMiddleware
-from app.routers import auth, health, properties
+from app.routers import auth, client_space, health, properties
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(properties.router)
+    app.include_router(client_space.router)
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def home(request: Request):
