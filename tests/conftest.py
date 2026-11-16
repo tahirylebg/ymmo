@@ -15,6 +15,11 @@ os.environ.setdefault("MEDIA_DIR", tempfile.mkdtemp(prefix="ymmo-media-"))
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 os.environ.setdefault("SEED_ON_STARTUP", "false")
+os.environ.setdefault(
+    "ANALYTICS_MODEL_PATH", os.path.join(tempfile.mkdtemp(prefix="ymmo-model-"), "model.joblib")
+)
+
+pytest_plugins = ["tests.pg_fixtures"]
 
 from collections.abc import Iterator  # noqa: E402
 from decimal import Decimal  # noqa: E402
