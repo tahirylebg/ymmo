@@ -1,0 +1,115 @@
+{# Reusable UI components (DRY). Each macro produces accessible markup. #}
+
+{% macro category_icon(category) -%}
+<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+  {%- if category.value in ('office', 'retail', 'warehouse') %}
+  <rect x="10" y="14" width="44" height="40"/><path d="M10 24h44M22 54V40h20v14M18 32h6M40 32h6"/>
+  {%- elif category.value == 'land' %}
+  <path d="M6 48c10-8 20-8 26 0s16 8 26 0M6 38c10-8 20-8 26 0s16 8 26 0"/><circle cx="46" cy="16" r="6"/>
+  {%- else %}
+  <path d="M8 30 32 10l24 20"/><path d="M14 26v28h36V26"/><path d="M27 54V40h10v14"/>
+  {%- endif %}
+</svg>
+{%- endmacro %}
+
+{% macro media(prop, size='thumb', eager=False) -%}
+  {% set photo = prop.cover_photo %}
+  {% if photo %}
+    <img src="/media/{{ photo.file_path.replace('.webp', '_thumb.webp') if size == 'thumb' else photo.file_path }}"
+         alt="{{ photo.alt_text }}" width="640" height="480"
+         {% if not eager %}loading="lazy"{% endif %} decoding="async">
+  {% else %}
+    <div class="placeholder">{{ category_icon(prop.category) }}</div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro favorite_button(prop, is_favorite, back) -%}
+<form method="post" action="/biens/{{ prop.id }}/favori" class="card-fav">
+  <input type="hidden" name="back" value="{{ back }}">
+  <button type="submit" class="icon-btn" aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+          aria-label="{{ 'Retirer' if is_favorite else 'Ajouter' }} {{ prop.title }} {{ 'des' if is_favorite else 'aux' }} favoris">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.6 1.1 4.4 2.6h1.6C13.6 6.1 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>
+  </button>
+</form>
+{%- endmacro %}
+
+{% macro property_card(prop, user=None, favorite_ids=(), back='/biens', heading='h3') -%}
+<article class="property-card" aria-labelledby="prop-{{ prop.id }}-title">
+  <div class="card-media">
+    {{ media(prop) }}
+    {% if prop.status.value != 'available' %}<span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span>{% endif %}
+  </div>
+  {% if user and user.role.value == 'client' %}{{ favorite_button(prop, prop.id in favorite_ids, back) }}{% endif %}
+  <div class="card-body">
+    <p class="card-price">{{ prop.price|euros }}</p>
+    <{{ heading }} class="card-title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title }}</a></{{ heading }}>
+    <ul class="card-facts">
+      <li>{{ prop.category|label }}</li>
+      <li>{{ prop.surface_m2|number }} m²</li>
+      {% if prop.rooms %}<li>{{ prop.rooms }} pièce{{ 's' if prop.rooms > 1 }}</li>{% endif %}
+      <li>{{ prop.price_per_m2|euros }}/m²</li>
+    </ul>
+    <p class="muted small card-city">{{ prop.city.name }} ({{ prop.city.postal_code }})</p>
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro field(name, label_text, values, errors, type='text', required=False, hint=None, attrs='') -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label_text }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+  {% if hint %}<span class="hint" id="f-{{ name }}-hint">{{ hint }}</span>{% endif %}
+  {% if type == 'textarea' %}
+  <textarea id="f-{{ name }}" name="{{ name }}" {% if required %}required{% endif %}
+    {% if errors.get(name) %}aria-invalid="true"{% endif %}
+    aria-describedby="{% if hint %}f-{{ name }}-hint {% endif %}{% if errors.get(name) %}f-{{ name }}-error{% endif %}" {{ attrs|safe }}>{{ values.get(name, '') }}</textarea>
+  {% else %}
+  <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ values.get(name, '') }}"
+    {% if required %}required{% endif %} {% if errors.get(name) %}aria-invalid="true"{% endif %}
+    aria-describedby="{% if hint %}f-{{ name }}-hint {% endif %}{% if errors.get(name) %}f-{{ name }}-error{% endif %}" {{ attrs|safe }}>
+  {% endif %}
+  {% if errors.get(name) %}<span class="field-error" id="f-{{ name }}-error">{{ errors[name] }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro select(name, label_text, options, selected, errors={}, required=False, empty=None, display_attr=None) -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label_text }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+  <select id="f-{{ name }}" name="{{ name }}" {% if required %}required{% endif %}
+    {% if errors.get(name) %}aria-invalid="true" aria-describedby="f-{{ name }}-error"{% endif %}>
+    {% if empty is not none %}<option value="">{{ empty }}</option>{% endif %}
+    {% for option in options %}
+      {% set value = option.value if option.value is defined else option.id %}
+      <option value="{{ value }}" {% if selected is not none and value|string == selected|string %}selected{% endif %}>
+        {{ option[display_attr] if display_attr else option|label }}
+      </option>
+    {% endfor %}
+  </select>
+  {% if errors.get(name) %}<span class="field-error" id="f-{{ name }}-error">{{ errors[name] }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro form_errors(errors) -%}
+  {% if errors %}
+  <div class="alert alert-error" role="alert" tabindex="-1" data-autofocus>
+    <p><strong>Le formulaire contient {{ errors|length }} erreur{{ 's' if errors|length > 1 }}.</strong></p>
+    {% if errors.get('__all__') %}<p>{{ errors['__all__'] }}</p>{% endif %}
+  </div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro pagination(page, page_url) -%}
+{% if page.pages > 1 %}
+<nav class="pagination" aria-label="Pagination des résultats">
+  <ul>
+    {% if page.has_previous %}<li><a href="{{ page_url(page.page - 1) }}" rel="prev">‹ <span class="visually-hidden">Page </span>précédente</a></li>{% endif %}
+    {% for n in range(1, page.pages + 1) %}
+      {% if n == 1 or n == page.pages or (n - page.page)|abs <= 2 %}
+        <li>{% if n == page.page %}<span aria-current="page"><span class="visually-hidden">Page </span>{{ n }}</span>
+            {% else %}<a href="{{ page_url(n) }}"><span class="visually-hidden">Page </span>{{ n }}</a>{% endif %}</li>
+      {% elif (n - page.page)|abs == 3 %}<li><span aria-hidden="true">…</span></li>{% endif %}
+    {% endfor %}
+    {% if page.has_next %}<li><a href="{{ page_url(page.page + 1) }}" rel="next"><span class="visually-hidden">Page </span>suivante ›</a></li>{% endif %}
+  </ul>
+</nav>
+{% endif %}
+{%- endmacro %}

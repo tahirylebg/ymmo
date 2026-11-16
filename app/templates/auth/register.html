@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "macros.html" import field, form_errors %}
+{% block title %}Créer un compte{% endblock %}
+{% block content %}
+<div class="form-narrow">
+  <h1>Créer un compte client</h1>
+  <p class="muted">Enregistrez vos favoris, demandez des visites, faites des offres et suivez vos démarches.</p>
+  {{ form_errors(errors) }}
+  <form method="post" action="/inscription" class="form-card" novalidate>
+    <div class="form-grid cols-2">
+      {{ field('first_name', 'Prénom', values, errors, required=True, attrs='autocomplete="given-name"') }}
+      {{ field('last_name', 'Nom', values, errors, required=True, attrs='autocomplete="family-name"') }}
+    </div>
+    {{ field('email', 'Adresse e-mail', values, errors, type='email', required=True, attrs='autocomplete="email"') }}
+    {{ field('phone', 'Téléphone', values, errors, type='tel', hint='Facultatif, ex. 06 12 34 56 78', attrs='autocomplete="tel"') }}
+    {{ field('password', 'Mot de passe', {}, errors, type='password', required=True,
+             hint='10 caractères minimum, avec une majuscule, une minuscule et un chiffre.',
+             attrs='autocomplete="new-password" minlength="10"') }}
+    <p class="small muted">Les champs marqués d'un astérisque (*) sont obligatoires.</p>
+    <button class="btn btn-block" type="submit">Créer mon compte</button>
+  </form>
+  <p class="muted">Déjà client ? <a href="/connexion">Se connecter</a></p>
+</div>
+{% endblock %}

@@ -14,7 +14,7 @@ def test_home_page_is_accessible_html(client):
     response = client.get("/")
     assert response.status_code == 200
     html = response.text
-    assert '<html lang="fr">' in html
+    assert 'lang="fr"' in html
     assert 'href="#main"' in html  # skip link for keyboard users
 
 

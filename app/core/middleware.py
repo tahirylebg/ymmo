@@ -1,7 +1,10 @@
-"""HTTP security headers added to every response (defence in depth)."""
+"""Security middlewares: HTTP headers and Origin check (defence in depth)."""
+
+from urllib.parse import urlsplit
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 
 # Swagger UI loads its assets from a CDN, so it gets a slightly wider policy.
 _STRICT_CSP = (
@@ -29,3 +32,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
         )
         return response
+
+
+class OriginCheckMiddleware(BaseHTTPMiddleware):
+    """Rejects state-changing requests sent from another site (CSRF defence in depth).
+
+    The session cookie is already SameSite=Lax; browsers also send an `Origin` header on
+    POST/PUT/PATCH/DELETE, which must match the host the request is addressed to.
+    """
+
+    UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        cross_site = bool(origin) and urlsplit(origin).netloc != request.headers.get("host")
+        if request.method in self.UNSAFE_METHODS and cross_site:
+            return PlainTextResponse("Origine de la requête refusée.", status_code=403)
+        return await call_next(request)

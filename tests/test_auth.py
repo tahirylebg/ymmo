@@ -131,11 +131,11 @@ def test_role_guard_blocks_clients_and_allows_staff(client):
     mini = FastAPI()
     register_exception_handlers(mini, templates)
 
-    @mini.get("/staff")
+    @mini.get("/api/staff")
     def staff_only(user=Depends(require_staff)):
         return {"role": user.role}
 
-    @mini.get("/admin")
+    @mini.get("/api/admin")
     def admin_only(user=Depends(require_roles(UserRole.ADMIN))):
         return {"ok": True}
 
@@ -156,9 +156,9 @@ def test_role_guard_blocks_clients_and_allows_staff(client):
     with TestClient(mini) as mini_client:
         as_client = {"Authorization": f"Bearer {client_token}"}
         as_agent = {"Authorization": f"Bearer {agent_token}"}
-        assert mini_client.get("/staff", headers=as_client).status_code == 403
-        assert mini_client.get("/staff", headers=as_agent).json() == {"role": "agent"}
-        assert mini_client.get("/admin", headers=as_agent).status_code == 403
+        assert mini_client.get("/api/staff", headers=as_client).status_code == 403
+        assert mini_client.get("/api/staff", headers=as_agent).json() == {"role": "agent"}
+        assert mini_client.get("/api/admin", headers=as_agent).status_code == 403
 
 
 def test_security_headers_are_set(client):

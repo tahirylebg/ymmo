@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "macros.html" import category_icon %}
+{% block title %}{{ prop.title }}{% endblock %}
+{% block description %}{{ prop.title }} · {{ prop.price|euros }} · {{ prop.surface_m2|number }} m² à {{ prop.city.name }}.{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <ol>
+    <li><a href="/">Accueil</a></li>
+    <li><a href="/biens">Biens à vendre</a></li>
+    <li><a href="/biens?city={{ prop.city.name|urlencode }}">{{ prop.city.name }}</a></li>
+    <li aria-current="page">{{ prop.reference }}</li>
+  </ol>
+</nav>
+
+<div class="detail-layout">
+  <article aria-labelledby="prop-title">
+    <header>
+      <p><span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span> <span class="muted small">Réf. {{ prop.reference }} · publié le {{ prop.published_at|date_fr }}</span></p>
+      <h1 id="prop-title">{{ prop.title }}</h1>
+      <p class="muted">{{ prop.address }}, {{ prop.city.postal_code }} {{ prop.city.name }}</p>
+    </header>
+
+    {% if prop.photos %}
+      <div class="gallery">
+        {% for photo in prop.photos %}
+          <figure>
+            <img src="/media/{{ photo.file_path if loop.first else photo.file_path.replace('.webp', '_thumb.webp') }}"
+                 alt="{{ photo.alt_text }}" width="{{ 1600 if loop.first else 640 }}" height="{{ 1200 if loop.first else 480 }}"
+                 {% if not loop.first %}loading="lazy"{% endif %} decoding="async">
+          </figure>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="detail-hero-placeholder"><div class="placeholder">{{ category_icon(prop.category) }}</div></div>
+    {% endif %}
+
+    <h2>Caractéristiques</h2>
+    <dl class="facts">
+      <div><dt>Prix</dt><dd>{{ prop.price|euros }}</dd></div>
+      <div><dt>Prix au m²</dt><dd>{{ prop.price_per_m2|euros }}</dd></div>
+      <div><dt>Surface</dt><dd>{{ prop.surface_m2|number(1) }} m²</dd></div>
+      <div><dt>Type</dt><dd>{{ prop.category|label }}</dd></div>
+      {% if prop.rooms %}<div><dt>Pièces</dt><dd>{{ prop.rooms }}</dd></div>{% endif %}
+      {% if prop.bedrooms %}<div><dt>Chambres</dt><dd>{{ prop.bedrooms }}</dd></div>{% endif %}
+      <div><dt>Usage</dt><dd>{{ prop.property_type|label }}</dd></div>
+    </dl>
+
+    <h2>Description</h2>
+    <p>{{ prop.description or "Pas de description pour le moment." }}</p>
+  </article>
+
+  <aside class="detail-aside" aria-label="Contact et actions">
+    <div class="panel">
+      <p class="price-tag">{{ prop.price|euros }}</p>
+      {% if prop.agent %}
+        <p>Votre agent : <strong>{{ prop.agent.full_name }}</strong><br>
+          <a href="mailto:{{ prop.agent.email }}">{{ prop.agent.email }}</a>{% if prop.agent.phone %}<br><a href="tel:{{ prop.agent.phone|replace(' ', '') }}">{{ prop.agent.phone }}</a>{% endif %}</p>
+      {% endif %}
+
+      {% if can_manage %}
+        <a class="btn btn-block" href="/back-office/biens/{{ prop.id }}">Gérer ce bien</a>
+      {% elif user and user.role.value == 'client' %}
+        <form method="post" action="/biens/{{ prop.id }}/favori">
+          <input type="hidden" name="back" value="/biens/{{ prop.id }}">
+          <button class="btn btn-secondary btn-block" type="submit" aria-pressed="{{ 'true' if is_favorite else 'false' }}">
+            {{ "Retirer des favoris" if is_favorite else "Ajouter aux favoris" }}
+          </button>
+        </form>
+      {% elif not user %}
+        <p><a class="btn btn-block" href="/connexion?next=/biens/{{ prop.id }}">Se connecter pour visiter ou faire une offre</a></p>
+      {% endif %}
+    </div>
+
+    {% if user and user.role.value == 'client' and prop.status.value != 'sold' %}
+      <section class="panel" id="visite" aria-labelledby="visit-title">
+        <h2 id="visit-title" class="h3">Demander une visite</h2>
+        <form method="post" action="/biens/{{ prop.id }}/visite">
+          <div class="field">
+            <label for="visit-at">Date et heure souhaitées</label>
+            <span class="hint" id="visit-at-hint">Du lundi au samedi, entre 9 h et 19 h.</span>
+            <input id="visit-at" name="scheduled_at" type="datetime-local" required aria-describedby="visit-at-hint">
+          </div>
+          <div class="field">
+            <label for="visit-msg">Message (facultatif)</label>
+            <textarea id="visit-msg" name="message" maxlength="1000" rows="3"></textarea>
+          </div>
+          <button class="btn btn-block" type="submit">Envoyer la demande</button>
+        </form>
+      </section>
+
+      <section class="panel" id="offre" aria-labelledby="offer-title">
+        <h2 id="offer-title" class="h3">Faire une offre</h2>
+        <form method="post" action="/biens/{{ prop.id }}/offre">
+          <div class="field">
+            <label for="offer-amount">Montant proposé (€)</label>
+            <input id="offer-amount" name="amount" type="number" min="1" step="1000" required inputmode="numeric" value="{{ (prop.price|float * 0.97)|round(-3)|int }}">
+          </div>
+          <div class="field">
+            <label for="offer-msg">Message (facultatif)</label>
+            <textarea id="offer-msg" name="message" maxlength="1000" rows="3"></textarea>
+          </div>
+          <button class="btn btn-block" type="submit">Envoyer l'offre</button>
+        </form>
+      </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
