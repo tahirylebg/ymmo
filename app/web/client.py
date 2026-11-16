@@ -6,12 +6,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import require_client
 from app.core.exceptions import DomainError
+from app.core.formatting import euros
 from app.models import User
 from app.models.enums import PropertyCategory, PropertyType
 from app.repositories.property_repository import CityRepository
 from app.schemas.requests import EstimationCreate, OfferCreate, VisitCreate
 from app.services.client_service import ClientService
-from app.web.templating import euros
 from app.web.utils import parse_form, redirect, render
 
 router = APIRouter(include_in_schema=False)

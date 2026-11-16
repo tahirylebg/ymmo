@@ -8,6 +8,8 @@ alembic upgrade head
 if [ "${SEED_ON_STARTUP:-false}" = "true" ] && [ -f scripts/seed.py ]; then
     echo "[entrypoint] Seeding demo data (skipped automatically if already present)..."
     python -m scripts.seed
+    echo "[entrypoint] Training the price model (skipped if already trained)..."
+    python -m analytics.train --if-missing || echo "[entrypoint] Model training skipped."
 fi
 
 exec "$@"

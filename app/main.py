@@ -8,7 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.middleware import OriginCheckMiddleware, SecurityHeadersMiddleware
-from app.routers import auth, client_space, health, properties, staff
+from app.routers import analytics, auth, client_space, health, properties, staff
+from app.web import analytics as web_analytics
 from app.web import auth as web_auth
 from app.web import client as web_client
 from app.web import public as web_public
@@ -43,10 +44,10 @@ def create_app() -> FastAPI:
     register_exception_handlers(app, templates)
 
     # REST API (documented in Swagger)
-    for module in (health, auth, properties, client_space, staff):
+    for module in (health, auth, properties, client_space, staff, analytics):
         app.include_router(module.router)
     # Server-rendered pages (they call the same services as the API)
-    for module in (web_public, web_auth, web_client, web_staff):
+    for module in (web_public, web_auth, web_client, web_staff, web_analytics):
         app.include_router(module.router)
 
     return app

@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     seed_on_startup: bool = False
     media_dir: str = "media"
+    analytics_model_path: str = "analytics/models/price_model.joblib"
 
     @property
     def database_url(self) -> str:
