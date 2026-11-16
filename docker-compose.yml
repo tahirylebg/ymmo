@@ -30,6 +30,7 @@ services:
       - "8000:8000"
     volumes:
       - media:/app/media
+      - models:/app/analytics/models
     depends_on:
       db:
         condition: service_healthy
@@ -37,3 +38,4 @@ services:
 volumes:
   pgdata:
   media:
+  models:
