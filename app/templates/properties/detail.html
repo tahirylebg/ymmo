@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import photo_alt, no_photo %}
-{% block title %}{{ prop.title }}{% endblock %}
-{% block description %}{{ prop.title }} · {{ prop.price|euros }} · {{ prop.surface_m2|number }} m² à {{ prop.city.name }}.{% endblock %}
+{% block title %}{{ prop.title|typo }}{% endblock %}
+{% block description %}{{ prop.title|typo }} · {{ prop.price|euros }} · {{ prop.surface_m2|number(unit='m²') }} à {{ prop.city.name }}.{% endblock %}
 {% set base = request.base_url|string %}
 {% block og_image %}{% if prop.photos %}{{ base }}media/{{ prop.photos[0].file_path }}{% else %}{{ super() }}{% endif %}{% endblock %}
 {% block head_extra %}
@@ -51,7 +51,7 @@
   <article aria-labelledby="prop-title">
     <header class="detail-header">
       <p class="eyebrow">{{ prop.category|label }} · {{ prop.city.name }}</p>
-      <h1 id="prop-title">{{ prop.title }}</h1>
+      <h1 id="prop-title">{{ prop.title|typo }}</h1>
       <div class="detail-meta">
         <span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span>
         <span class="muted small">Réf. {{ prop.reference }} · publié le {{ prop.published_at|date_fr }}</span>
@@ -87,7 +87,7 @@
     <dl class="facts">
       <div><dt>Prix</dt><dd>{{ prop.price|euros }}</dd></div>
       <div><dt>Prix au m²</dt><dd>{{ prop.price_per_m2|euros }}</dd></div>
-      <div><dt>Surface</dt><dd>{{ prop.surface_m2|number(1) }} m²</dd></div>
+      <div><dt>Surface</dt><dd>{{ prop.surface_m2|number(1, 'm²') }}</dd></div>
       <div><dt>Type</dt><dd>{{ prop.category|label }}</dd></div>
       {% if prop.rooms %}<div><dt>Pièces</dt><dd>{{ prop.rooms }}</dd></div>{% endif %}
       {% if prop.bedrooms %}<div><dt>Chambres</dt><dd>{{ prop.bedrooms }}</dd></div>{% endif %}
@@ -95,14 +95,14 @@
     </dl>
 
     <h2>Description</h2>
-    <p>{{ prop.description or "Pas de description pour le moment." }}</p>
+    <p>{{ (prop.description or "Pas de description pour le moment.")|typo }}</p>
   </article>
 
   <aside class="detail-aside" aria-label="Contact et actions">
     <div class="panel">
       <p class="eyebrow">Prix de vente</p>
       <p class="price-tag">{{ prop.price|euros }}</p>
-      <p class="price-sub">{{ prop.price_per_m2|euros }}/m² · {{ prop.surface_m2|number }} m²{% if prop.rooms %} · {{ prop.rooms }} pièce{{ 's' if prop.rooms > 1 }}{% endif %}</p>
+      <p class="price-sub">{{ prop.price_per_m2|euros }}/m² · {{ prop.surface_m2|number(unit='m²') }}{% if prop.rooms %} · {{ prop.rooms|rooms }}{% endif %}</p>
       {% if prop.agent %}
         <div class="agent-card">
           <span class="agent-initials" aria-hidden="true">{{ prop.agent.first_name[:1] }}{{ prop.agent.last_name[:1] }}</span>

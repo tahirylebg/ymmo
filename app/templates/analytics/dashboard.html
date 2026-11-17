@@ -86,7 +86,7 @@
         <tbody>
         {% for z in data.zones.head(15).to_dict('records') %}
           <tr><th scope="row">{{ z.city_key }}</th><td class="num"><strong>{{ z.score|number(0) }}</strong></td>
-            <td class="num">{{ z.growth|signed_percent }}</td><td class="num">{{ z.days_to_sell|number(0) }} j</td><td class="num">{{ z.price_m2|euros }}</td></tr>
+            <td class="num">{{ z.growth|signed_percent }}</td><td class="num">{{ z.days_to_sell|number(0, 'j') }}</td><td class="num">{{ z.price_m2|euros }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -129,8 +129,8 @@
         <thead><tr><th scope="col">Type</th><th scope="col" class="num">Ventes</th><th scope="col" class="num">Moyenne</th><th scope="col" class="num">Médiane</th><th scope="col" class="num">90 %</th><th scope="col" class="num">Négociation</th></tr></thead>
         <tbody>
         {% for d in data.durations.to_dict('records') %}
-          <tr><th scope="row">{{ d.category|label }}</th><td class="num">{{ d.sales }}</td><td class="num">{{ d.avg_days|number(0) }} j</td>
-            <td class="num">{{ d.median_days|number(0) }} j</td><td class="num">{{ d.p90_days|number(0) }} j</td><td class="num">-{{ d.avg_negotiation_pct|number(1) }} %</td></tr>
+          <tr><th scope="row">{{ d.category|label }}</th><td class="num">{{ d.sales }}</td><td class="num">{{ d.avg_days|number(0, 'j') }}</td>
+            <td class="num">{{ d.median_days|number(0, 'j') }}</td><td class="num">{{ d.p90_days|number(0, 'j') }}</td><td class="num">-{{ d.avg_negotiation_pct|number(1, '%') }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -146,7 +146,7 @@
       <thead><tr><th scope="col" class="num">Rang</th><th scope="col">Bien</th><th scope="col">Ville</th><th scope="col" class="num">Vues (30 j)</th><th scope="col" class="num">Favoris</th><th scope="col" class="num">Visites</th><th scope="col" class="num">Offres</th></tr></thead>
       <tbody>
       {% for p in data.popular.to_dict('records') %}
-        <tr><td class="num">{{ p.global_rank }}</td><th scope="row"><a href="/biens/{{ p.property_id }}">{{ p.title }}</a></th><td>{{ p.city }}</td>
+        <tr><td class="num">{{ p.global_rank }}</td><th scope="row"><a href="/biens/{{ p.property_id }}">{{ p.title|typo }}</a></th><td>{{ p.city }}</td>
           <td class="num">{{ p.views_30d }}</td><td class="num">{{ p.favorites_count }}</td><td class="num">{{ p.visits_count }}</td><td class="num">{{ p.offers_count }}</td></tr>
       {% endfor %}
       </tbody>
@@ -168,7 +168,7 @@
         <tbody>
         {% for a in data.agencies.to_dict('records') %}
           <tr><td class="num">{{ a.revenue_rank }}</td><th scope="row">{{ a.name }}</th><td class="num">{{ a.sales_count }}</td>
-            <td class="num">{{ a.revenue|euros }}</td><td class="num">{{ a.avg_days_to_sell|number(0) if a.avg_days_to_sell is not none else '—' }} j</td></tr>
+            <td class="num">{{ a.revenue|euros }}</td><td class="num">{{ a.avg_days_to_sell|number(0, 'j') if a.avg_days_to_sell is not none else '—' }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -185,7 +185,7 @@
       {% if m %}
         <ul>
           <li>Entraîné sur {{ m.n_train }} ventes, testé sur {{ m.n_test }} ventes jamais vues.</li>
-          <li>Erreur moyenne : <strong>{{ (m.mape * 100)|number(1) }} %</strong> ({{ m.mae_eur|euros }}), contre {{ (m.baseline_mape * 100)|number(1) }} % pour la méthode manuelle « prix médian au m² de la même catégorie dans la ville × surface ».</li>
+          <li>Erreur moyenne : <strong>{{ (m.mape * 100)|number(1, '%') }}</strong> ({{ m.mae_eur|euros }}), contre {{ (m.baseline_mape * 100)|number(1, '%') }} pour la méthode manuelle « prix médian au m² de la même catégorie dans la ville × surface ».</li>
           <li>R² (échelle log) : {{ m.r2|number(2) }}.</li>
         </ul>
       {% else %}

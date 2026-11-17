@@ -34,7 +34,7 @@
       {% for visit in dashboard.visits %}
         <li class="list-card">
           <div>
-            <h3><a href="/biens/{{ visit.property_id }}">{{ visit.listing.title }}</a></h3>
+            <h3><a href="/biens/{{ visit.property_id }}">{{ visit.listing.title|typo }}</a></h3>
             <p class="muted small">{{ visit.scheduled_at|datetime_fr }}{% if visit.agent %} · avec {{ visit.agent.first_name }} {{ visit.agent.last_name }}{% endif %}</p>
             <span class="badge badge-{{ visit.status.value }}">{{ visit.status|label }}</span>
           </div>
@@ -61,13 +61,13 @@
         <tbody>
           {% for offer in dashboard.offers %}
           <tr>
-            <th scope="row"><a href="/biens/{{ offer.property_id }}">{{ offer.listing.title }}</a></th>
+            <th scope="row"><a href="/biens/{{ offer.property_id }}">{{ offer.listing.title|typo }}</a></th>
             <td class="num">{{ offer.listing.price|euros }}</td>
             <td class="num">{{ offer.amount|euros }}</td>
             <td><span class="badge badge-{{ offer.status.value }}">{{ offer.status|label }}</span></td>
             <td>{% if offer.status.value == 'pending' %}
               <form method="post" action="/mon-espace/offres/{{ offer.id }}/retirer" data-confirm="Retirer cette offre ?">
-                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l'offre sur {{ offer.listing.title }}</span></button>
+                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l'offre sur {{ offer.listing.title|typo }}</span></button>
               </form>{% endif %}</td>
           </tr>
           {% endfor %}
@@ -89,7 +89,7 @@
       {% for est in dashboard.estimations %}
         <li class="list-card">
           <div>
-            <h3>{{ est.category|label }} de {{ est.surface_m2|number }} m² · {{ est.city.name }}</h3>
+            <h3>{{ est.category|label }} de {{ est.surface_m2|number(unit='m²') }} · {{ est.city.name }}</h3>
             <p class="muted small">Envoyée le {{ est.created_at|date_fr }} · estimation indicative : <strong>{{ est.estimated_price|euros }}</strong>{% if est.desired_price %} · prix souhaité : {{ est.desired_price|euros }}{% endif %}</p>
             <span class="badge badge-{{ est.status.value }}">{{ est.status|label }}</span>
           </div>

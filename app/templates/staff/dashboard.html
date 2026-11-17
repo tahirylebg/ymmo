@@ -78,7 +78,7 @@
           <td>{{ o.client.first_name }} {{ o.client.last_name }}</td>
           <td class="num">{{ o.listing.price|euros }}</td>
           <td class="num">{{ o.amount|euros }}</td>
-          <td class="num">-{{ (o.discount_rate * 100)|number(1) }} %</td>
+          <td class="num">-{{ (o.discount_rate * 100)|number(1, '%') }}</td>
           <td class="btn-row">
             <form method="post" action="/back-office/offres/{{ o.id }}/accepter" class="inline-form" data-confirm="Accepter cette offre ? Les autres offres en attente seront refusées."><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l'offre {{ o.id }}</span></button></form>
             <form method="post" action="/back-office/offres/{{ o.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l'offre {{ o.id }}</span></button></form>
@@ -98,7 +98,7 @@
     {% for e in board.estimations %}
       <li class="list-card">
         <div>
-          <h3>{{ e.category|label }} de {{ e.surface_m2|number }} m² · {{ e.address }}, {{ e.city.name }}</h3>
+          <h3>{{ e.category|label }} de {{ e.surface_m2|number(unit='m²') }} · {{ e.address }}, {{ e.city.name }}</h3>
           <p class="small muted">{{ e.client.first_name }} {{ e.client.last_name }} · {{ e.client.email }} · le {{ e.created_at|date_fr }}<br>
             Estimation automatique : <strong>{{ e.estimated_price|euros }}</strong>{% if e.desired_price %} · souhait du vendeur : {{ e.desired_price|euros }}{% endif %}</p>
           <span class="badge badge-{{ e.status.value }}">{{ e.status|label }}</span>
@@ -140,7 +140,7 @@
       {% for p in board.properties %}
         <tr>
           <th scope="row"><a href="/back-office/biens/{{ p.id }}">{{ p.reference }}</a></th>
-          <td>{{ p.title }}</td>
+          <td>{{ p.title|typo }}</td>
           <td>{{ p.city.name }}</td>
           <td class="num">{{ p.price|euros }}</td>
           <td><span class="badge badge-{{ p.status.value }}">{{ p.status|label }}</span></td>
@@ -163,7 +163,7 @@
       {% for t in board.transactions %}
         <tr>
           <td>{{ t.signed_at|date_fr }}</td>
-          <th scope="row">{{ t.listing.reference }} <span class="muted small">{{ t.listing.title }}</span></th>
+          <th scope="row">{{ t.listing.reference }} <span class="muted small">{{ t.listing.title|typo }}</span></th>
           <td>{% if t.buyer %}{{ t.buyer.first_name }} {{ t.buyer.last_name }}{% else %}—{% endif %}</td>
           <td class="num">{{ t.final_price|euros }}</td>
         </tr>

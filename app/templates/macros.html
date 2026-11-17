@@ -30,9 +30,10 @@
 </svg>
 {%- endmacro %}
 
-{# Empty state when a listing has no photo yet: warm light, arcade drawing, type in small caps. #}
+{# Empty state when a listing has no photo yet: warm light and an arcade drawing. The category is
+   already printed next to it (card header, detail eyebrow), so nothing is laid over the drawing. #}
 {% macro no_photo(prop) -%}
-  <div class="placeholder" aria-hidden="true">{{ arches(3) }}<span>{{ prop.category|label }}</span></div>
+  <div class="placeholder" aria-hidden="true">{{ arches(3) }}</div>
 {%- endmacro %}
 
 {# Card photo. `sizes` follows the card grid: 3 columns from 64rem (max ~26rem each),
@@ -56,7 +57,7 @@
 <form method="post" action="/biens/{{ prop.id }}/favori" class="card-fav">
   <input type="hidden" name="back" value="{{ back }}">
   <button type="submit" class="icon-btn" aria-pressed="{{ 'true' if is_favorite else 'false' }}"
-          aria-label="{{ 'Retirer' if is_favorite else 'Ajouter' }} {{ prop.title }} {{ 'des' if is_favorite else 'aux' }} favoris">
+          aria-label="{{ 'Retirer' if is_favorite else 'Ajouter' }} {{ prop.title|typo }} {{ 'des' if is_favorite else 'aux' }} favoris">
     <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.6 1.1 4.4 2.6h1.6C13.6 6.1 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>
   </button>
 </form>
@@ -72,10 +73,10 @@
   {% if user and user.role.value == 'client' %}{{ favorite_button(prop, prop.id in favorite_ids, back) }}{% endif %}
   <div class="card-body">
     <p class="card-price">{{ prop.price|euros }}</p>
-    <{{ heading }} class="card-title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title }}</a></{{ heading }}>
+    <{{ heading }} class="card-title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title|typo }}</a></{{ heading }}>
     <ul class="card-facts">
-      <li>{{ prop.surface_m2|number }} m²</li>
-      {% if prop.rooms %}<li>{{ prop.rooms }} pièce{{ 's' if prop.rooms > 1 }}</li>{% endif %}
+      <li>{{ prop.surface_m2|number(unit='m²') }}</li>
+      {% if prop.rooms %}<li>{{ prop.rooms|rooms }}</li>{% endif %}
       <li>{{ prop.price_per_m2|euros }}/m²</li>
     </ul>
     <p class="card-city"><span>{{ prop.category|label }}</span><span>{{ prop.city.name }} ({{ prop.city.postal_code }})</span></p>

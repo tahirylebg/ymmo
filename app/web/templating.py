@@ -13,7 +13,10 @@ from app.core.formatting import (
     iso_local,
     label,
     number,
+    rooms,
+    short_title,
     signed_percent,
+    typo,
 )
 from app.web.arcade import arcade_paths
 
@@ -28,6 +31,9 @@ templates.env.filters.update(
     datetime_fr=datetime_fr,
     iso_local=iso_local,
     signed_percent=signed_percent,
+    rooms=rooms,
+    typo=typo,
+    short_title=short_title,
 )
 templates.env.globals["LABELS"] = LABELS
 templates.env.globals["arcade_paths"] = arcade_paths
