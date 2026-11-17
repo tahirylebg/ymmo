@@ -88,7 +88,7 @@ def rooms(count: int | None) -> str:
     """3 -> '3 pièces', 1 -> '1 pièce' (no-break space)."""
     if not count:
         return "—"
-    return f"{count}{NBSP_WORD}pièce{'s' if count > 1 else ''}"
+    return number(count, unit="pièces" if count > 1 else "pièce")
 
 
 # French typography for free text (titles and descriptions typed in the back-office).

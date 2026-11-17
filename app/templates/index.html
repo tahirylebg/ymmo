@@ -127,7 +127,7 @@
       {% set x, y = france_map.point(agency.city.latitude, agency.city.longitude) %}
       <a href="/biens?agency_id={{ agency.id }}" tabindex="-1" data-agency="{{ agency.id }}">
         <circle class="agency-dot-halo" cx="{{ x }}" cy="{{ y }}" r="11"/>
-        <circle class="agency-dot{% if agency.is_headquarters %} is-hq{% endif %}" cx="{{ x }}" cy="{{ y }}" r="{{ 5 if agency.is_headquarters else 3.5 }}"/>
+        <circle class="agency-dot" cx="{{ x }}" cy="{{ y }}" r="{{ 5 if agency.is_headquarters else 3.5 }}"/>
       </a>
     {% endfor %}
   </svg>

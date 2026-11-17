@@ -286,18 +286,19 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
     axisZ.subVectors(sun.position, sun.target.position).normalize();
     axisX.crossVectors(UP, axisZ).normalize();
     axisY.crossVectors(axisZ, axisX);
-    const box = { x: [Infinity, -Infinity], y: [Infinity, -Infinity], d: [Infinity, -Infinity] };
+    // Runs every frame: plain scalars, no per-corner allocation.
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minD = Infinity, maxD = -Infinity;
     for (const point of shadowBox) {
       rel.subVectors(point, sun.position);
-      const coords = { x: rel.dot(axisX), y: rel.dot(axisY), d: -rel.dot(axisZ) };
-      for (const key of ["x", "y", "d"]) {
-        box[key][0] = Math.min(box[key][0], coords[key]);
-        box[key][1] = Math.max(box[key][1], coords[key]);
-      }
+      const x = rel.dot(axisX), y = rel.dot(axisY), d = -rel.dot(axisZ);
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      minD = Math.min(minD, d); maxD = Math.max(maxD, d);
     }
     Object.assign(sun.shadow.camera, {
-      left: box.x[0] - 0.5, right: box.x[1] + 0.5, bottom: box.y[0] - 0.5, top: box.y[1] + 0.5,
-      near: Math.max(0.5, box.d[0] - 2), far: box.d[1] + 2,
+      left: minX - 0.5, right: maxX + 0.5, bottom: minY - 0.5, top: maxY + 0.5,
+      near: Math.max(0.5, minD - 2), far: maxD + 2,
     });
     sun.shadow.camera.updateProjectionMatrix();
   }

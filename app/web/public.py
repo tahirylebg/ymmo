@@ -1,5 +1,6 @@
 """Public pages: home, search, property detail, estimation."""
 
+import time
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request
@@ -21,6 +22,18 @@ router = APIRouter(include_in_schema=False)
 Viewer = Depends(get_optional_user)
 
 
+_MEDIAN_TTL = 300  # seconds: the figure only moves when a sale is signed
+_median_cache: tuple[float, int | None] = (0.0, None)
+
+
+def _median_days(db: Session) -> int | None:
+    """Home page market figure, cached so each visit does not re-read a year of sales."""
+    global _median_cache
+    if time.monotonic() - _median_cache[0] > _MEDIAN_TTL:
+        _median_cache = (time.monotonic(), TransactionRepository(db).median_days_to_sell())
+    return _median_cache[1]
+
+
 def _favorite_ids(db: Session, user: User | None) -> set[int]:
     if user is None or user.role != UserRole.CLIENT:
         return set()
@@ -40,7 +53,7 @@ def home(request: Request, db: Session = Depends(get_db), user: User | None = Vi
         user,
         latest=selection,
         total_available=latest.total,
-        median_days=TransactionRepository(db).median_days_to_sell(),
+        median_days=_median_days(db),
         agencies=AgencyRepository(db).all(),
         favorite_ids=_favorite_ids(db, user),
         categories=list(PropertyCategory),

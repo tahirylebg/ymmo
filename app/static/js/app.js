@@ -51,7 +51,8 @@
 
   // Gentle reveal on scroll; skipped entirely when the user prefers reduced motion.
   const revealables = document.querySelectorAll("[data-reveal]");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const reduceMotion = motionQuery.matches;
   if (revealables.length && "IntersectionObserver" in window && !reduceMotion) {
     document.documentElement.classList.add("js-reveal");
     const observer = new IntersectionObserver((entries) => {
@@ -156,7 +157,6 @@
     const formatter = new Intl.NumberFormat("fr-FR", {
       style: "currency", currency: "EUR", maximumFractionDigits: 0,
     });
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let shown = 0;
     let frame = 0;
     const note = (text) => {
@@ -174,7 +174,7 @@
       spoken.textContent = formatter.format(amount);
       const from = shown;
       shown = amount;
-      if (reduceMotion.matches) {
+      if (motionQuery.matches) {
         visual.textContent = formatter.format(amount);
         return;
       }
