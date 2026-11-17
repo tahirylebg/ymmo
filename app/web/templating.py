@@ -1,5 +1,6 @@
 """Jinja2 environment wired with the French formatting filters."""
 
+import hashlib
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
@@ -28,3 +29,17 @@ templates.env.filters.update(
     signed_percent=signed_percent,
 )
 templates.env.globals["LABELS"] = LABELS
+
+
+def _asset_version() -> str:
+    """Short hash of the CSS and JS bundles, appended to their URLs to bust browser caches."""
+    static_dir = TEMPLATES_DIR.parent / "static"
+    digest = hashlib.sha256()
+    for relative in ("css/main.css", "js/app.js"):
+        path = static_dir / relative
+        if path.exists():
+            digest.update(path.read_bytes())
+    return digest.hexdigest()[:10]
+
+
+templates.env.globals["ASSET_VERSION"] = _asset_version()

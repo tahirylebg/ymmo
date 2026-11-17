@@ -9,8 +9,8 @@
   <link rel="icon" href="{{ url_for('static', path='img/favicon.svg') }}" type="image/svg+xml">
   <link rel="preload" href="{{ url_for('static', path='fonts/newsreader-latin-opsz-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', path='fonts/public-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
-  <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}?v={{ ASSET_VERSION }}">
+  <script src="{{ url_for('static', path='js/app.js') }}?v={{ ASSET_VERSION }}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">Aller au contenu principal</a>

@@ -237,6 +237,8 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 .nav-user { color: var(--c-muted); font-size: var(--fs-2xs); padding: var(--space-3) 0; }
 
 @media (min-width: 90rem) { .brand-tag { display: inline; } }
+/* Between tablet and wide desktop the user name would push the menu off screen */
+@media (min-width: 64rem) and (max-width: 79.99rem) { .site-nav .nav-user { display: none; } }
 @media (min-width: 64rem) {
   .site-header .container { flex-wrap: nowrap; }
   .nav-toggle { display: none; }
