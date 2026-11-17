@@ -197,7 +197,7 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 .skip-link:focus { top: var(--space-2); color: var(--c-bg); }
 
 /* Spaced small capitals: labels, eyebrows, table heads, badges */
-.eyebrow, .facts dt, thead th, .kpi-label, .chart figcaption, .badge, .brand-tag, .placeholder span,
+.eyebrow, .facts dt, thead th, .kpi-label, .chart figcaption, .badge, .brand-tag,
 .field label, .field legend, .card-city, .breadcrumb ol, .btn, .site-nav a, .site-nav button.link, .nav-user, .dash-nav a {
   font-family: var(--font-sans); letter-spacing: var(--tracking-caps); text-transform: uppercase;
 }
@@ -641,8 +641,8 @@ main > .container > h1 { margin-bottom: var(--space-6); }
     var(--c-media);
   color: var(--c-muted);
 }
-.placeholder svg { position: absolute; inset: auto 0 0; width: 100%; color: var(--brass-500); opacity: .45; }
-.placeholder span { position: relative; font-size: .625rem; font-weight: 600; padding: var(--space-2) var(--space-3); background: var(--c-paper); color: var(--c-heading); }
+/* Drawing centred at a fixed share of the slot: never cropped, even in the tall featured card */
+.placeholder svg { width: min(72%, 24rem); max-height: 70%; color: var(--brass-500); opacity: .5; }
 .card-body { padding: var(--space-5) 0 0; display: flex; flex-direction: column; gap: var(--space-2); flex: none; }
 .card-city { order: -1; display: flex; gap: var(--space-2); font-size: .625rem; font-weight: 600; color: var(--c-accent); margin: 0; white-space: nowrap; overflow: hidden; }
 .card-city > * + *::before { content: "·"; margin-right: var(--space-2); }
