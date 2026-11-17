@@ -458,9 +458,16 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hero.has-arcade-3d .hero-arcade { opacity: 1; }
 .hero.has-arcade-3d .arches { opacity: 0; }
 @media (min-width: 64rem) {
+  /* Wide screens: long, eased fade from the copy into the gallery, and a fade under the header */
   .hero-arcade {
-    -webkit-mask-image: linear-gradient(to right, transparent 3rem, #000 16rem);
-    mask-image: linear-gradient(to right, transparent 3rem, #000 16rem);
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0, rgb(0 0 0 / .12) min(4rem, 8%), rgb(0 0 0 / .55) min(10rem, 20%), #000 min(20rem, 38%)),
+      linear-gradient(to bottom, transparent var(--header-h), #000 calc(var(--header-h) + 8rem));
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, transparent 0, rgb(0 0 0 / .12) min(4rem, 8%), rgb(0 0 0 / .55) min(10rem, 20%), #000 min(20rem, 38%)),
+      linear-gradient(to bottom, transparent var(--header-h), #000 calc(var(--header-h) + 8rem));
+    mask-composite: intersect;
   }
 }
 /* Stacked layouts: the warm glow sits lower, behind the search panel rather than the figures */

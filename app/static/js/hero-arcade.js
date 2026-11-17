@@ -97,7 +97,9 @@ export async function mount(hero) {
     const narrow = !wide.matches;
     let horizon = null;
     if (!narrow) {
-      const right = Math.max(...copy.map(textRight)) - box.left;
+      // The gallery starts a little after the longest line (5 % of the hero width), so the
+      // title's last glyph never touches an arch; the CSS mask then fades it in.
+      const right = Math.max(...copy.map(textRight)) - box.left + box.width * 0.05;
       hero.style.setProperty("--arcade-left", `${Math.round(Math.max(0, right - 48))}px`);
       hero.style.setProperty("--arcade-top", "0px");
     } else {

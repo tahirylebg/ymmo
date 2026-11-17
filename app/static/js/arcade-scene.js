@@ -64,8 +64,22 @@ function cubicBezier(x1, y1, x2, y2) {
 }
 const ease = cubicBezier(0.2, 0.7, 0.2, 1);
 
-/** Discreet procedural grain on the stone colour + optional fade to transparent with distance. */
-function stoneShader(material, { fade = null } = {}) {
+/**
+ * Stone look: discreet procedural grain, painted ambient occlusion (darker where surfaces meet:
+ * foot of the piers, under the entablement, along the back wall) and an optional fade to
+ * transparent with distance. `ao`: "wall" (by height) or "floor" (by distance to the walls).
+ */
+const AO = {
+  wall: `float ao = mix(0.6, 1.0, smoothstep(0.0, 1.2, vWPos.y));
+ao *= 1.0 - 0.22 * smoothstep(${(WALL_TOP - 0.9).toFixed(2)}, ${WALL_TOP.toFixed(2)}, vWPos.y);`,
+  // Back wall: also deep shade where it meets the ceiling (hides the thin shadow-map leak there).
+  backWall: `float ao = mix(0.6, 1.0, smoothstep(0.0, 1.2, vWPos.y));
+ao *= 1.0 - 0.6 * smoothstep(${(WALL_TOP - 0.6).toFixed(2)}, ${(WALL_TOP + 0.3).toFixed(2)}, vWPos.y);
+ao *= 1.0 - smoothstep(${(WALL_TOP + 0.3).toFixed(2)}, ${(WALL_TOP + 0.58).toFixed(2)}, vWPos.y);`,
+  floor: `float ao = mix(0.55, 1.0, smoothstep(0.0, 1.4, abs(vWPos.x - ${GALLERY.toFixed(2)})));
+ao *= mix(0.78, 1.0, smoothstep(0.0, 0.9, vWPos.x));`,
+};
+function stoneShader(material, { fade = null, ao = null } = {}) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uFade = { value: fade || [0, 0] };
     shader.vertexShader = shader.vertexShader
@@ -83,7 +97,12 @@ float yNoise(vec3 x) {
 }`)
       .replace("#include <color_fragment>", `#include <color_fragment>
 float grain = yNoise(vWPos * 1.3) * 0.6 + yNoise(vWPos * 6.0) * 0.4;
-diffuseColor.rgb *= 0.9 + 0.14 * grain;`)
+diffuseColor.rgb *= 0.9 + 0.14 * grain;
+${ao ? `${AO[ao]}
+diffuseColor.rgb *= ao;` : ""}`)
+      // Occlusion also dims the sun's specular (it would otherwise outline the shadow edges).
+      .replace("#include <aomap_fragment>", `#include <aomap_fragment>
+${ao ? "reflectedLight.directSpecular *= ao; reflectedLight.indirectSpecular *= ao;" : ""}`)
       .replace("#include <fog_fragment>", `#include <fog_fragment>
 if (uFade.y > 0.0) gl_FragColor.a *= 1.0 - smoothstep(uFade.x, uFade.y, distance(vWPos, cameraPosition));`);
   };
@@ -117,9 +136,14 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
   const THREE = await import(THREE_URL);
   await yieldThread();
 
+  // Ask for the WebGL 2 context first: without it, quietly keep the SVG (Three.js would log an
+  // error to the console when it fails to create one itself).
+  const attributes = { alpha: true, antialias: true, powerPreference: "low-power" };
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
+    const context = canvas.getContext("webgl2", attributes);
+    if (!context) return null;
+    renderer = new THREE.WebGLRenderer({ canvas, context, ...attributes });
   } catch {
     return null;
   }
@@ -138,19 +162,43 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
 
   // ---- Arches: one extruded bay each, so they can appear one after the other ---------------
   const bayGeometry = new THREE.ExtrudeGeometry(bayShape(THREE), {
-    depth: DEPTH, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2, curveSegments: 28,
+    depth: DEPTH, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.035, bevelSegments: 3, curveSegments: 32,
   });
   disposables.push(bayGeometry);
+  // Mouldings of the two half piers of a bay, in the bay's own frame (shape X/Y, extrusion Z):
+  // a stepped plinth at the foot and an impost (capital) where the arch springs. Neighbouring
+  // bays complete each other, so every pier gets a full moulding; children fade with their bay.
+  const half = BAY / 2;
+  const mouldingSpecs = [
+    { overhang: 0.09, height: 0.42, y: 0.21 },                // plinth
+    { overhang: 0.05, height: 0.12, y: 0.48 },                // plinth top step
+    { overhang: 0.03, height: 0.07, y: SPRING - 0.2 },        // astragal
+    { overhang: 0.11, height: 0.16, y: SPRING - 0.06 },       // impost slab
+  ];
+  const mouldings = mouldingSpecs.map(({ overhang, height, y }) => {
+    const width = PIER / 2 + overhang;
+    const geometry = new THREE.BoxGeometry(width, height, DEPTH + 2 * overhang);
+    disposables.push(geometry);
+    return { geometry, y, x: half - width / 2 };
+  });
   const bays = [];
   for (let i = 0; i < BAYS; i++) {
     const material = stoneShader(new THREE.MeshStandardMaterial({
       color: colors.stone, roughness: 0.92, metalness: 0, transparent: true, opacity: 0,
-    }));
+    }), { ao: "wall" });
     const mesh = new THREE.Mesh(bayGeometry, material);
     mesh.rotation.y = Math.PI / 2;               // shape X runs along -Z, extrusion along +X
     mesh.position.set(-DEPTH, 0, START_Z - (i + 0.5) * BAY);
     mesh.castShadow = false;                      // switched on once the bay is half visible
     mesh.receiveShadow = true;
+    for (const { geometry, y, x } of mouldings) {
+      for (const side of [-1, 1]) {
+        const part = new THREE.Mesh(geometry, material);
+        part.position.set(side * x, y, DEPTH / 2);
+        part.receiveShadow = true;
+        mesh.add(part);
+      }
+    }
     scene.add(mesh);
     bays.push(mesh);
     disposables.push(material);
@@ -178,20 +226,29 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
   const entablature = stone(colors.stone, { params: { transparent: true, opacity: 0 } });
   const span = LENGTH + 0.2;
   const spanZ = START_Z - LENGTH / 2;
-  box(DEPTH + 0.24, 0.62, span, entablature, -DEPTH / 2, WALL_TOP + 0.31, spanZ);
-  box(DEPTH + 0.5, 0.16, span, entablature, -DEPTH / 2, WALL_TOP + 0.7, spanZ);
+  // Wall, architrave, cornice and ceiling all overlap a little: with touching faces the sun
+  // slipped through the seams and drew thin lines of light on the back wall.
+  box(DEPTH + 0.24, 0.84, span, entablature, -DEPTH / 2, WALL_TOP + 0.30, spanZ);
+  box(DEPTH + 0.5, 0.2, span, entablature, -DEPTH / 2, WALL_TOP + 0.68, spanZ);
 
   // Ceiling (keeps the sun out from above), back wall, and a floor that dissolves into the hero.
   const shellLength = SHELL_NEAR + LENGTH + 12;
   const shellZ = SHELL_NEAR - shellLength / 2;
   const fade = [LENGTH * 0.75, LENGTH * 1.4];
-  box(GALLERY + 0.6, 0.2, shellLength, stone(colors.inkSoft, { fade, params: { transparent: true } }),
-    GALLERY / 2 - 0.3, WALL_TOP + 0.72, shellZ, { cast: true, receive: false });
-  box(0.5, WALL_TOP + 0.8, shellLength, stone(colors.stoneDark, { fade, params: { transparent: true } }),
-    GALLERY + 0.25, (WALL_TOP + 0.8) / 2, shellZ, { cast: false });
+  // The ceiling runs from the outer face of the arcade to the outside of the back wall, so no
+  // sliver of sun gets in between them.
+  const ceilingLeft = -DEPTH - 0.3;
+  const ceilingRight = GALLERY + 0.5;
+  // shadowSide: both faces go into the shadow map. With the default (back faces only) the top of
+  // the back wall, tucked inside the ceiling, was seen as lit and drew a bright line in the corner.
+  const ceiling = stone(colors.inkSoft, { fade, params: { transparent: true, shadowSide: THREE.DoubleSide } });
+  box(ceilingRight - ceilingLeft, 0.6, shellLength, ceiling,
+    (ceilingLeft + ceilingRight) / 2, WALL_TOP + 0.92, shellZ, { cast: true, receive: false });
+  box(0.5, WALL_TOP + 1.1, shellLength, stone(colors.stoneDark, { fade, ao: "backWall", params: { transparent: true } }),
+    GALLERY + 0.25, (WALL_TOP + 1.1) / 2, shellZ, { cast: false });
   const floorGeometry = new THREE.PlaneGeometry(80, shellLength);
   disposables.push(floorGeometry);
-  const floor = new THREE.Mesh(floorGeometry, stone(colors.stoneDark, { fade, params: { transparent: true } }));
+  const floor = new THREE.Mesh(floorGeometry, stone(colors.stoneDark, { fade, ao: "floor", params: { transparent: true } }));
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(-20, 0, shellZ);
   floor.receiveShadow = true;
@@ -202,14 +259,113 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
   scene.add(new THREE.HemisphereLight(colors.inkSoft.clone().lerp(colors.brass, 0.25), colors.ink, 0.45));
   const sun = new THREE.DirectionalLight(colors.brass, 2.5);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.radius = 4;
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.03;
-  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 120 });
+  // The shadow map only covers the gallery (refitted as the sun moves, see fitShadow), so its
+  // texels stay small and the arch shadows have clean edges instead of stair steps.
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.radius = 2;
+  sun.shadow.bias = -0.0002;
+  sun.shadow.normalBias = 0.02;
   const sunCenter = new THREE.Vector3(GALLERY / 2, 0, START_Z - LENGTH * 0.45);
   sun.target.position.copy(sunCenter);
   scene.add(sun, sun.target);
+
+  // Shadow camera = tight box around the gallery, in the light's own frame (same basis as
+  // DirectionalLightShadow: looking from the sun to its target).
+  const shadowBox = [];
+  for (const x of [-DEPTH - 0.4, GALLERY + 0.6]) {
+    for (const y of [0, WALL_TOP + 0.9]) {
+      for (const z of [START_Z + 0.5, START_Z - LENGTH - 0.5]) shadowBox.push(new THREE.Vector3(x, y, z));
+    }
+  }
+  const UP = new THREE.Vector3(0, 1, 0);
+  const axisX = new THREE.Vector3();
+  const axisY = new THREE.Vector3();
+  const axisZ = new THREE.Vector3();
+  const rel = new THREE.Vector3();
+  function fitShadow() {
+    axisZ.subVectors(sun.position, sun.target.position).normalize();
+    axisX.crossVectors(UP, axisZ).normalize();
+    axisY.crossVectors(axisZ, axisX);
+    const box = { x: [Infinity, -Infinity], y: [Infinity, -Infinity], d: [Infinity, -Infinity] };
+    for (const point of shadowBox) {
+      rel.subVectors(point, sun.position);
+      const coords = { x: rel.dot(axisX), y: rel.dot(axisY), d: -rel.dot(axisZ) };
+      for (const key of ["x", "y", "d"]) {
+        box[key][0] = Math.min(box[key][0], coords[key]);
+        box[key][1] = Math.max(box[key][1], coords[key]);
+      }
+    }
+    Object.assign(sun.shadow.camera, {
+      left: box.x[0] - 0.5, right: box.x[1] + 0.5, bottom: box.y[0] - 0.5, top: box.y[1] + 0.5,
+      near: Math.max(0.5, box.d[0] - 2), far: box.d[1] + 2,
+    });
+    sun.shadow.camera.updateProjectionMatrix();
+  }
+
+  // ---- Light in the air: a faint additive sheet of sunlight through each arch, and a warm
+  // glow at the vanishing point that draws the eye down the gallery ---------------------------
+  const BEAM_OPACITY = 0.14;
+  const GLOW_OPACITY = 0.55;
+  const glowShader = (material, alpha) => {
+    material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace("#include <common>", "#include <common>\nvarying vec2 vLightUv;")
+        .replace("#include <begin_vertex>", "#include <begin_vertex>\nvLightUv = uv;");
+      shader.fragmentShader = shader.fragmentShader
+        .replace("#include <common>", "#include <common>\nvarying vec2 vLightUv;")
+        .replace("#include <color_fragment>", `#include <color_fragment>\n${alpha}`);
+    };
+    disposables.push(material);
+    return material;
+  };
+  const additive = (fog) => new THREE.MeshBasicMaterial({
+    color: colors.amber, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide, fog,
+  });
+  // uv.x: 0 at the opening -> 1 on the back wall; uv.y: 0 at the floor -> 1 under the arch.
+  const beamMaterial = glowShader(additive(true), `diffuseColor.a *= pow(1.0 - vLightUv.x, 1.6)
+  * smoothstep(0.0, 0.3, vLightUv.y) * smoothstep(1.0, 0.6, vLightUv.y) * smoothstep(0.0, 0.08, vLightUv.x);`);
+  const beams = [];
+  for (let i = 0; i < BAYS; i++) {
+    const geometry = new THREE.PlaneGeometry(1, 1);
+    disposables.push(geometry);
+    const beam = new THREE.Mesh(geometry, beamMaterial);
+    beam.frustumCulled = false; // vertices move every frame
+    beam.renderOrder = 2;
+    beam.userData.z = START_Z - (i + 0.5) * BAY;
+    scene.add(beam);
+    beams.push(beam);
+  }
+  const glowGeometry = new THREE.PlaneGeometry(GALLERY * 2.6, WALL_TOP * 1.7);
+  disposables.push(glowGeometry);
+  const glowMaterial = glowShader(additive(false), `float r = length((vLightUv - vec2(0.5, 0.42)) * vec2(1.0, 1.35)) * 2.0;
+diffuseColor.a *= pow(max(0.0, 1.0 - r), 2.4);`);
+  const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+  glow.position.set(GALLERY / 2, WALL_TOP * 0.45, START_Z - LENGTH - 0.6);
+  glow.renderOrder = 2;
+  scene.add(glow);
+
+  let lightIn = 0; // 0..1, rises with the intro
+  const travel = new THREE.Vector3();
+  function updateBeams() {
+    travel.copy(sunDirection).negate(); // direction the light travels
+    const length = GALLERY / Math.max(0.2, travel.x); // from the inner face of the arcade to the back wall
+    const top = SPRING + RADIUS * 0.75;
+    for (const beam of beams) {
+      const z = beam.userData.z;
+      const position = beam.geometry.attributes.position;
+      // PlaneGeometry vertex order: (u0,v1) (u1,v1) (u0,v0) (u1,v0)
+      position.setXYZ(0, 0, top, z);
+      position.setXYZ(1, travel.x * length, top + travel.y * length, z + travel.z * length);
+      position.setXYZ(2, 0, 0.02, z);
+      position.setXYZ(3, travel.x * length, 0.02 + travel.y * length, z + travel.z * length);
+      position.needsUpdate = true;
+    }
+    beamMaterial.color.copy(sun.color);
+    beamMaterial.opacity = BEAM_OPACITY * lightIn * (sun.intensity / 2.5);
+    glowMaterial.color.copy(sun.color).lerp(colors.amber, 0.5);
+    glowMaterial.opacity = GLOW_OPACITY * lightIn;
+  }
 
   const sunDirection = new THREE.Vector3();
   const updateSun = (time) => {
@@ -221,6 +377,8 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
     sun.position.copy(sunCenter).addScaledVector(sunDirection, 60);
     sun.color.copy(colors.brass).lerp(colors.amber, 0.15 + ((1 - wave) / 2) * 0.45); // lower, warmer
     sun.intensity = 2.5 + wave * 0.4;
+    fitShadow();
+    updateBeams();
   };
 
   // ---- Camera: long lens, aimed so the vanishing point sits right of the title ---------------
@@ -265,10 +423,13 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
       const p = ease((elapsed - i * stagger) / INTRO_BAY_MS);
       mesh.material.opacity = p;
       mesh.position.y = -0.45 * (1 - p);
-      mesh.castShadow = p > 0.5;
+      const cast = p > 0.5;
+      mesh.traverse((part) => { part.castShadow = cast; });
     });
     entablature.opacity = ease(elapsed / INTRO_MS);
+    lightIn = ease(elapsed / INTRO_MS);
     if (elapsed >= INTRO_MS) {
+      lightIn = 1;
       introDone = true;
       for (const material of [...bays.map((b) => b.material), entablature]) {
         material.opacity = 1;
