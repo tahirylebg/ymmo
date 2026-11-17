@@ -15,7 +15,7 @@ from functools import lru_cache
 
 VIEW_W, VIEW_H = 1200, 560
 
-# Arcade proportions (metres, roughly those of the 3D hero scene).
+# Arcade proportions (metres).
 BAY = 3.4
 PIER = 0.78
 RADIUS = (BAY - PIER) / 2
