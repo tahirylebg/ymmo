@@ -18,6 +18,7 @@ from app.core.formatting import (
     signed_percent,
     typo,
 )
+from app.web import france_map
 from app.web.arcade import arcade_paths
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -37,6 +38,7 @@ templates.env.filters.update(
 )
 templates.env.globals["LABELS"] = LABELS
 templates.env.globals["arcade_paths"] = arcade_paths
+templates.env.globals["france_map"] = france_map
 
 
 def _asset_version() -> str:

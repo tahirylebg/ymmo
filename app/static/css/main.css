@@ -487,6 +487,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 @media (min-width: 48rem) { .hero-stats { gap: var(--space-8); } }
 .hero-stats li { display: flex; flex-direction: column; gap: var(--space-1); }
 .hero-stats strong { font: 300 clamp(2rem, 1.5rem + 1.5vw, 2.75rem)/1 var(--font-serif); color: var(--c-on-dark); font-variant-numeric: lining-nums; }
+.hero-stats strong small { font-size: .45em; font-weight: 400; color: var(--c-on-dark-muted); }
 .hero-stats span { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-on-dark-muted); }
 
 /* Search bar: one elegant line overlapping the bottom of the hero */
@@ -529,6 +530,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .card-grid-feature { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .card-grid-feature > li:first-child { grid-column: span 2; grid-row: span 2; }
   .card-grid-feature > li:first-child .card-media { aspect-ratio: auto; flex: 1; min-height: 28rem; }
+  .card-grid-feature > li:first-child .card-body { flex: none; }
   .card-grid-feature > li:first-child .card-price { font-size: 2rem; }
   .card-grid-feature > li:first-child .card-title { font-size: 1.75rem; }
 }
@@ -574,11 +576,22 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .band h2 { color: var(--c-on-dark); font-size: clamp(2.25rem, 1.5rem + 3vw, 4rem); font-weight: 300; margin: 0; max-width: 16ch; }
 .band p { color: var(--c-on-dark-muted); }
 
-.agency-list {
-  list-style: none; padding: 0; margin: 0; display: grid; border-top: var(--border-hair);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); column-gap: var(--space-7);
-}
-.agency-list li { border-bottom: var(--border-hair); }
+/* Agencies: map of France + list, hovering one lights the other (main.js) */
+.agencies { display: grid; gap: var(--space-7); align-items: center; }
+@media (min-width: 64rem) { .agencies { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-9); } }
+.agency-map { width: 100%; max-width: 28rem; height: auto; justify-self: center; overflow: visible; }
+.agency-map-land { fill: color-mix(in srgb, var(--brass-200) 35%, transparent); stroke: var(--c-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.agency-dot { fill: var(--brass-500); transition: fill var(--dur-fast) var(--ease); }
+.agency-dot-halo { fill: var(--brass-500); opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.4); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.agency-map a { cursor: pointer; }
+.agency-map .is-active .agency-dot, .agency-map a:hover .agency-dot { fill: var(--c-accent); }
+.agency-map .is-active .agency-dot-halo, .agency-map a:hover .agency-dot-halo { opacity: .28; transform: scale(1); }
+/* Columns (not a grid): 13 agencies split 7 / 6, never one orphan on its own row */
+.agency-list { list-style: none; padding: 0; margin: 0; border-top: var(--border-hair); column-gap: var(--space-7); }
+@media (min-width: 40rem) { .agency-list { columns: 2; } }
+.agency-list li { border-bottom: var(--border-hair); break-inside: avoid; }
+.agency-list li.is-active strong { color: var(--c-accent); }
+.agency-list li.is-active .arrow { transform: translateX(.35rem); color: var(--c-accent); }
 .agency-list a {
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3);
   padding: var(--space-4) 0; text-decoration: none; color: var(--c-heading);
@@ -643,14 +656,15 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 }
 /* Drawing centred at a fixed share of the slot: never cropped, even in the tall featured card */
 .placeholder svg { width: min(72%, 24rem); max-height: 70%; color: var(--brass-500); opacity: .5; }
-.card-body { padding: var(--space-5) 0 0; display: flex; flex-direction: column; gap: var(--space-2); flex: none; }
+/* Body fills the card so every price sits on the same baseline, whatever the title length */
+.card-body { padding: var(--space-5) 0 0; display: flex; flex-direction: column; gap: var(--space-2); flex: 1 0 auto; }
 .card-city { order: -1; display: flex; gap: var(--space-2); font-size: .625rem; font-weight: 600; color: var(--c-accent); margin: 0; white-space: nowrap; overflow: hidden; }
 .card-city > * + *::before { content: "·"; margin-right: var(--space-2); }
 .card-city > :last-child { overflow: hidden; text-overflow: ellipsis; }
 .card-title {
   font: 400 var(--fs-xl)/1.25 var(--font-serif); letter-spacing: -.01em; margin: 0;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
-  overflow: hidden; min-height: calc(2em * 1.25);
+  overflow: hidden;
 }
 .card-title a { color: var(--c-heading); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size var(--dur) var(--ease); }
 .property-card:hover .card-title a { background-size: 100% 1px; }
@@ -659,14 +673,14 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .property-card .card-title a:focus-visible { outline: none; }
 .card-facts {
   display: flex; flex-wrap: nowrap; align-items: center; min-width: 0; overflow: hidden;
-  margin: var(--space-1) 0 0; padding: 0; list-style: none; white-space: nowrap; font-size: var(--fs-sm); color: var(--c-muted);
+  margin: var(--space-1) 0 var(--space-3); padding: 0; list-style: none; white-space: nowrap; font-size: var(--fs-sm); color: var(--c-muted);
   font-variant-numeric: tabular-nums;
 }
 .card-facts > * { flex: none; }
 .card-facts > :last-child { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .card-facts > * + *::before { content: "·"; margin: 0 var(--space-2); color: var(--c-line-strong); }
 .card-price {
-  order: 5; margin: var(--space-3) 0 0; padding-top: var(--space-3); border-top: var(--border-hair);
+  order: 5; margin: auto 0 0; padding-top: var(--space-3); border-top: var(--border-hair);
   font: 400 var(--fs-xl)/1.2 var(--font-serif); color: var(--c-heading); font-variant-numeric: lining-nums;
 }
 .card-fav { position: absolute; top: var(--space-3); right: var(--space-3); z-index: 2; }

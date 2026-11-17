@@ -62,6 +62,17 @@
     else window.addEventListener("load", whenIdle, { once: true });
   }
 
+  // Agencies map: hovering or focusing a city in the list lights its dot, and the reverse.
+  const agencies = document.querySelector("[data-agencies]");
+  if (agencies) {
+    const light = (id) => agencies.querySelectorAll("[data-agency]").forEach((el) => {
+      el.classList.toggle("is-active", el.dataset.agency === id);
+    });
+    const track = (event) => light(event.target.closest("[data-agency]")?.dataset.agency ?? null);
+    ["pointerover", "focusin"].forEach((type) => agencies.addEventListener(type, track));
+    ["pointerleave", "focusout"].forEach((type) => agencies.addEventListener(type, () => light(null)));
+  }
+
   // Search filters start collapsed on small screens (results first).
   if (window.matchMedia("(max-width: 59.99rem)").matches) {
     document.querySelectorAll("details[data-collapse-mobile]").forEach((d) => d.removeAttribute("open"));

@@ -12,6 +12,7 @@ from app.models import User
 from app.models.enums import PropertyCategory, PropertyStatus, PropertyType, UserRole
 from app.repositories.property_repository import AgencyRepository, CityRepository
 from app.repositories.request_repository import FavoriteRepository
+from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.property import PropertyFilters, SortOption
 from app.services.property_service import PropertyService
 from app.web.utils import render
@@ -28,13 +29,18 @@ def _favorite_ids(db: Session, user: User | None) -> set[int]:
 
 @router.get("/")
 def home(request: Request, db: Session = Depends(get_db), user: User | None = Viewer):
-    latest = PropertyService(db).search(PropertyFilters(size=6))
+    service = PropertyService(db)
+    latest = service.search(PropertyFilters(size=6))
+    # The large first card shows the most prestigious listing, then the newest ones.
+    featured = service.search(PropertyFilters(size=1, sort=SortOption.PRICE_DESC)).items
+    selection = featured + [p for p in latest.items if p not in featured][: 6 - len(featured)]
     return render(
         request,
         "index.html",
         user,
-        latest=latest.items,
+        latest=selection,
         total_available=latest.total,
+        median_days=TransactionRepository(db).median_days_to_sell(),
         agencies=AgencyRepository(db).all(),
         favorite_ids=_favorite_ids(db, user),
         categories=list(PropertyCategory),

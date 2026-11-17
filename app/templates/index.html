@@ -16,7 +16,11 @@
     <ul class="hero-stats">
       <li><strong>{{ total_available }}</strong><span>Biens disponibles</span></li>
       <li><strong>{{ agencies|length }}</strong><span>Agences locales</span></li>
+      {% if median_days %}
+      <li><strong>{{ median_days }}<small>&nbsp;jours</small></strong><span>Délai de vente médian</span></li>
+      {% else %}
       <li><strong>1</strong><span>Agent dédié par projet</span></li>
+      {% endif %}
     </ul>
 
     <form class="search-panel" method="get" action="/biens" role="search" aria-label="Rechercher un bien">
@@ -52,8 +56,8 @@
 <section class="lux-section" aria-labelledby="latest-title">
   <div class="lux-head" data-reveal>
     <div>
-      <p class="eyebrow">Sélection</p>
-      <h2 id="latest-title">Nos dernières adresses</h2>
+      <p class="eyebrow">À la une, puis les nouveautés</p>
+      <h2 id="latest-title">Notre sélection</h2>
     </div>
     <a class="link-arrow" href="/biens">Voir tous les biens</a>
   </div>
@@ -115,9 +119,21 @@
       <h2 id="agencies-title">Nos {{ agencies|length }} agences</h2>
     </div>
   </div>
+  <div class="agencies" data-agencies>
+  {# Decorative map: the list next to it carries the same links for keyboards and screen readers #}
+  <svg class="agency-map" viewBox="0 0 {{ france_map.WIDTH }} {{ france_map.HEIGHT }}" aria-hidden="true" focusable="false" data-reveal>
+    <path class="agency-map-land" d="{{ france_map.OUTLINE }}"/>
+    {% for agency in agencies %}
+      {% set x, y = france_map.point(agency.city.latitude, agency.city.longitude) %}
+      <a href="/biens?agency_id={{ agency.id }}" tabindex="-1" data-agency="{{ agency.id }}">
+        <circle class="agency-dot-halo" cx="{{ x }}" cy="{{ y }}" r="11"/>
+        <circle class="agency-dot{% if agency.is_headquarters %} is-hq{% endif %}" cx="{{ x }}" cy="{{ y }}" r="{{ 5 if agency.is_headquarters else 3.5 }}"/>
+      </a>
+    {% endfor %}
+  </svg>
   <ul class="agency-list" data-reveal>
     {% for agency in agencies %}
-      <li>
+      <li data-agency="{{ agency.id }}">
         <a href="/biens?agency_id={{ agency.id }}">
           <span><strong>{{ agency.city.name }}</strong>{% if agency.is_headquarters %} <small>Siège</small>{% endif %}</span>
           <span class="arrow" aria-hidden="true">→</span>
@@ -126,5 +142,6 @@
       </li>
     {% endfor %}
   </ul>
+  </div>
 </section>
 {% endblock %}

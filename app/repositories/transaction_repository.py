@@ -1,4 +1,5 @@
-from datetime import date
+import statistics
+from datetime import date, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
@@ -35,6 +36,21 @@ class TransactionRepository(BaseRepository[Transaction]):
             .limit(limit)
         )
         return list(self.db.scalars(stmt))
+
+    def median_days_to_sell(self, window_days: int = 365) -> int | None:
+        """Median days between publication and signature, over the latest `window_days`
+        of sales (counted back from the most recent one, so seeded history works too)."""
+        latest = self.db.scalar(select(func.max(Transaction.signed_at)))
+        if latest is None:
+            return None
+        rows = self.db.execute(
+            select(Transaction.signed_at, Property.published_at)
+            .join(Property, Property.id == Transaction.property_id)
+            .where(Transaction.signed_at >= latest - timedelta(days=window_days))
+        ).all()
+        days = [(signed - published.date()).days for signed, published in rows]
+        days = [d for d in days if d >= 0]
+        return round(statistics.median(days)) if days else None
 
     def totals_since(
         self, since: date, *, agent_id: int | None = None, agency_id: int | None = None

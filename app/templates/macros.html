@@ -73,7 +73,7 @@
   {% if user and user.role.value == 'client' %}{{ favorite_button(prop, prop.id in favorite_ids, back) }}{% endif %}
   <div class="card-body">
     <p class="card-price">{{ prop.price|euros }}</p>
-    <{{ heading }} class="card-title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title|typo }}</a></{{ heading }}>
+    <{{ heading }} class="card-title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title|short_title(prop.category, prop.city.name) }}<span class="visually-hidden">, {{ prop.category|label|lower }} à {{ prop.city.name }}</span></a></{{ heading }}>
     <ul class="card-facts">
       <li>{{ prop.surface_m2|number(unit='m²') }}</li>
       {% if prop.rooms %}<li>{{ prop.rooms|rooms }}</li>{% endif %}
