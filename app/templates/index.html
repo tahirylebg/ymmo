@@ -65,7 +65,7 @@
     {% for prop in latest %}
       {# The first listing spans two columns and two rows on desktop (~54rem wide) #}
       <li data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">{{ property_card(prop, user, favorite_ids, back='/',
-          sizes='(min-width: 64rem) 54rem, (min-width: 40rem) calc(50vw - 4rem), calc(100vw - 2rem)' if loop.first else None) }}</li>
+          sizes='(min-width: 64rem) 54rem, (min-width: 40rem) calc(50vw - 4rem), min(calc(100vw - 2rem), 22rem)' if loop.first else None) }}</li>
     {% endfor %}
   </ul>
 </section>

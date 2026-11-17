@@ -284,8 +284,13 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
   .site-nav a.btn { margin: 0; min-height: var(--control-h-sm); padding: 0 var(--btn-px-sm); }
   .nav-user { padding: 0 0 0 var(--space-5); border-left: var(--border-hair); white-space: nowrap; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
 }
-.no-js .site-nav { display: block; }
-.no-js .nav-toggle { display: none; }
+/* Without JavaScript the menu is simply shown. A media query (not a class removed by JS), so
+   pages with JS never paint the open menu first and then collapse it (layout shift). */
+@media (scripting: none) {
+  .site-nav { display: block; }
+  .nav-toggle { display: none; }
+  .page-home .site-header { background: var(--c-dark); border-color: var(--c-dark-rule); }
+}
 
 /* Home: header floats over the dark hero, becomes solid once the page scrolls */
 .page-home .site-header {
@@ -301,7 +306,7 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 .page-home .site-header .nav-user { color: var(--c-on-dark-muted); border-color: var(--c-dark-rule); }
 .page-home .site-header .site-nav a.btn { background: transparent; border-color: currentColor; color: inherit; }
 .page-home .site-header .site-nav a.btn:hover { background: var(--c-on-dark); border-color: var(--c-on-dark); color: var(--c-dark); }
-.page-home .site-header.is-scrolled, .page-home .site-header.is-open, .no-js .page-home .site-header {
+.page-home .site-header.is-scrolled, .page-home .site-header.is-open {
   background: var(--c-dark); border-color: var(--c-dark-rule);
 }
 
@@ -722,6 +727,8 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 @media (min-width: 64rem) {
   .search-layout { grid-template-columns: 17rem 1fr; gap: var(--space-9); align-items: start; }
   .filters { position: sticky; top: var(--sticky-top); }
+}
+@media (min-width: 64rem) and (scripting: enabled) {
   .filters details summary { display: none; }
 }
 .results-bar {

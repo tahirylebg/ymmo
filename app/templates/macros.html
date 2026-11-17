@@ -39,7 +39,9 @@
 {# Card photo. `sizes` follows the card grid: 3 columns from 64rem (max ~26rem each),
    2 columns from 40rem, full width below; the browser picks the 640w thumbnail or the
    1600w original accordingly. #}
-{% set CARD_SIZES = '(min-width: 64rem) 26rem, (min-width: 40rem) calc(50vw - 4rem), calc(100vw - 2rem)' %}
+{# Phones: a full-width card (~23rem x DPR 1.75-3) only just exceeds the 640 px thumbnail, which
+   stays sharp; announcing at most 22rem keeps the browser off the 1600 px original (3x heavier). #}
+{% set CARD_SIZES = '(min-width: 64rem) 26rem, (min-width: 40rem) calc(50vw - 4rem), min(calc(100vw - 2rem), 22rem)' %}
 {% macro media(prop, size='thumb', eager=False, sizes=CARD_SIZES) -%}
   {% set photo = prop.cover_photo %}
   {% if photo %}

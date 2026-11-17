@@ -1,7 +1,6 @@
 /* Ymmo — progressive enhancement only: every feature also works without JavaScript. */
 (() => {
   "use strict";
-  document.documentElement.classList.remove("no-js");
 
   // Mobile navigation toggle (disclosure pattern).
   const toggle = document.querySelector(".nav-toggle");
@@ -99,9 +98,10 @@
     ["pointerleave", "focusout"].forEach((type) => agencies.addEventListener(type, () => light(null)));
   }
 
-  // Search filters start collapsed on small screens (results first).
-  if (window.matchMedia("(max-width: 59.99rem)").matches) {
-    document.querySelectorAll("details[data-collapse-mobile]").forEach((d) => d.removeAttribute("open"));
+  // Search filters are served collapsed (results first on phones, no layout shift); the wide
+  // layout shows them in a side column, so opening them there moves nothing.
+  if (window.matchMedia("(min-width: 64rem)").matches) {
+    document.querySelectorAll("details[data-open-wide]").forEach((d) => { d.open = true; });
   }
 
   // Tables that scroll sideways become keyboard-focusable regions named after their caption.
