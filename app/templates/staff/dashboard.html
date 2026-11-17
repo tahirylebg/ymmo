@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Back-office{% endblock %}
-{% block description %}Back-office Ymmo : gestion des biens, des visites, des offres et des ventes de l'agence.{% endblock %}
+{% block description %}Back-office Ymmo : gestion des biens, des visites, des offres et des ventes de l’agence.{% endblock %}
 {% block content %}
 <div class="section-head">
   <div>
@@ -19,7 +19,7 @@
   <li class="kpi"><span class="kpi-value">{{ board.kpis.under_offer }}</span><span class="kpi-label">sous offre</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.upcoming_visits }}</span><span class="kpi-label">visites à venir</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.pending_offers }}</span><span class="kpi-label">offres à traiter</span></li>
-  <li class="kpi"><span class="kpi-value">{{ board.kpis.open_estimations }}</span><span class="kpi-label">demandes d'estimation</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.open_estimations }}</span><span class="kpi-label">demandes d’estimation</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.sales_last_12_months }}</span><span class="kpi-label">ventes sur 12 mois</span></li>
   <li class="kpi"><span class="kpi-value">{{ (board.kpis.revenue_last_12_months / 1000000)|number(1) }} M€</span><span class="kpi-label">volume de ventes sur 12 mois</span></li>
 </ul>
@@ -28,7 +28,7 @@
   <ul>
     <li><a href="#visites">Visites</a></li>
     <li><a href="#offres">Offres</a></li>
-    <li><a href="#estimations">Demandes d'estimation</a></li>
+    <li><a href="#estimations">Demandes d’estimation</a></li>
     <li><a href="#biens">Biens</a></li>
     <li><a href="#ventes">Ventes</a></li>
   </ul>
@@ -69,7 +69,7 @@
   {% if board.offers %}
   <div class="table-wrap">
     <table>
-      <caption class="visually-hidden">Offres d'achat en attente de réponse</caption>
+      <caption class="visually-hidden">Offres d’achat en attente de réponse</caption>
       <thead><tr><th scope="col">Bien</th><th scope="col">Client</th><th scope="col" class="num">Prix affiché</th><th scope="col" class="num">Offre</th><th scope="col" class="num">Écart</th><th scope="col">Actions</th></tr></thead>
       <tbody>
       {% for o in board.offers %}
@@ -80,8 +80,8 @@
           <td class="num">{{ o.amount|euros }}</td>
           <td class="num">-{{ (o.discount_rate * 100)|number(1, '%') }}</td>
           <td class="btn-row">
-            <form method="post" action="/back-office/offres/{{ o.id }}/accepter" class="inline-form" data-confirm="Accepter cette offre ? Les autres offres en attente seront refusées."><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l'offre {{ o.id }}</span></button></form>
-            <form method="post" action="/back-office/offres/{{ o.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l'offre {{ o.id }}</span></button></form>
+            <form method="post" action="/back-office/offres/{{ o.id }}/accepter" class="inline-form" data-confirm="Accepter cette offre ? Les autres offres en attente seront refusées."><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l’offre {{ o.id }}</span></button></form>
+            <form method="post" action="/back-office/offres/{{ o.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l’offre {{ o.id }}</span></button></form>
           </td>
         </tr>
       {% endfor %}
@@ -92,7 +92,7 @@
 </section>
 
 <section id="estimations" class="dash-section" aria-labelledby="est-title">
-  <h2 id="est-title">Demandes d'estimation (biens à rentrer)</h2>
+  <h2 id="est-title">Demandes d’estimation (biens à rentrer)</h2>
   {% if board.estimations %}
   <ul class="list-cards">
     {% for e in board.estimations %}
@@ -113,13 +113,13 @@
             <details>
               <summary class="btn btn-secondary btn-sm">Mandat signé : publier</summary>
               <form method="post" action="/back-office/estimations/{{ e.id }}/mandat" class="form-card">
-                <div class="field"><label for="m-title-{{ e.id }}">Titre de l'annonce</label>
+                <div class="field"><label for="m-title-{{ e.id }}">Titre de l’annonce</label>
                   <input id="m-title-{{ e.id }}" name="title" required minlength="5" value="{{ e.category|label }} {{ e.surface_m2|int }} m² - {{ e.city.name }}"></div>
                 <div class="field"><label for="m-price-{{ e.id }}">Prix de vente (€)</label>
                   <input id="m-price-{{ e.id }}" name="price" type="number" min="1" step="1000" required value="{{ (e.estimated_price or 0)|int }}"></div>
                 <div class="field"><label for="m-desc-{{ e.id }}">Description</label>
                   <textarea id="m-desc-{{ e.id }}" name="description" rows="3"></textarea></div>
-                <button class="btn btn-sm" type="submit">Publier l'annonce</button>
+                <button class="btn btn-sm" type="submit">Publier l’annonce</button>
               </form>
             </details>
           {% endif %}

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Analyses et prévisions{% endblock %}
-{% block description %}Analyses Ymmo : prévisions de ventes, tendance des prix au m², score d'opportunité des zones et performance des agences.{% endblock %}
+{% block description %}Analyses Ymmo : prévisions de ventes, tendance des prix au m², score d’opportunité des zones et performance des agences.{% endblock %}
 {% block content %}
-<nav class="breadcrumb" aria-label="Fil d'Ariane">
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
   <ol><li><a href="/back-office">Back-office</a></li><li aria-current="page">Analyses</li></ol>
 </nav>
 <div class="section-head">
@@ -77,11 +77,11 @@
   <div class="chart-grid">
     <figure class="chart">
       <figcaption>Top 10 des zones</figcaption>
-      <img src="/api/analytics/charts/zones.svg" alt="Classement des zones par score d'opportunité, détaillé dans le tableau." width="800" height="480" loading="lazy">
+      <img src="/api/analytics/charts/zones.svg" alt="Classement des zones par score d’opportunité, détaillé dans le tableau." width="800" height="480" loading="lazy">
     </figure>
     <div class="table-wrap">
       <table>
-        <caption class="visually-hidden">Score d'opportunité par ville</caption>
+        <caption class="visually-hidden">Score d’opportunité par ville</caption>
         <thead><tr><th scope="col">Ville</th><th scope="col" class="num">Score</th><th scope="col" class="num">Évolution/an</th><th scope="col" class="num">Délai médian</th><th scope="col" class="num">Prix €/m²</th></tr></thead>
         <tbody>
         {% for z in data.zones.head(15).to_dict('records') %}
@@ -177,7 +177,7 @@
 </section>
 
 <section id="modele" class="dash-section" aria-labelledby="model-title">
-  <h2 id="model-title">Modèle d'estimation et qualité des données</h2>
+  <h2 id="model-title">Modèle d’estimation et qualité des données</h2>
   <div class="chart-grid">
     <div class="panel">
       <h3 class="h3">Modèle de prix (régression)</h3>

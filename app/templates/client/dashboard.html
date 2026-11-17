@@ -23,7 +23,7 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="empty">Aucun favori pour l'instant. <a href="/biens">Parcourir les biens</a></p>
+    <p class="empty">Aucun favori pour l’instant. <a href="/biens">Parcourir les biens</a></p>
   {% endif %}
 </section>
 
@@ -52,11 +52,11 @@
 </section>
 
 <section id="offres" class="dash-section" aria-labelledby="offers-title">
-  <h2 id="offers-title">Mes offres d'achat</h2>
+  <h2 id="offers-title">Mes offres d’achat</h2>
   {% if dashboard.offers %}
     <div class="table-wrap">
       <table>
-        <caption class="visually-hidden">Offres d'achat envoyées</caption>
+        <caption class="visually-hidden">Offres d’achat envoyées</caption>
         <thead><tr><th scope="col">Bien</th><th scope="col" class="num">Prix affiché</th><th scope="col" class="num">Mon offre</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
           {% for offer in dashboard.offers %}
@@ -67,7 +67,7 @@
             <td><span class="badge badge-{{ offer.status.value }}">{{ offer.status|label }}</span></td>
             <td>{% if offer.status.value == 'pending' %}
               <form method="post" action="/mon-espace/offres/{{ offer.id }}/retirer" data-confirm="Retirer cette offre ?">
-                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l'offre sur {{ offer.listing.title|typo }}</span></button>
+                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l’offre sur {{ offer.listing.title|typo }}</span></button>
               </form>{% endif %}</td>
           </tr>
           {% endfor %}
@@ -93,12 +93,12 @@
             <p class="muted small">Envoyée le {{ est.created_at|date_fr }} · estimation indicative : <strong>{{ est.estimated_price|euros }}</strong>{% if est.desired_price %} · prix souhaité : {{ est.desired_price|euros }}{% endif %}</p>
             <span class="badge badge-{{ est.status.value }}">{{ est.status|label }}</span>
           </div>
-          {% if est.property_id %}<a class="btn btn-secondary btn-sm" href="/biens/{{ est.property_id }}">Voir l'annonce</a>{% endif %}
+          {% if est.property_id %}<a class="btn btn-secondary btn-sm" href="/biens/{{ est.property_id }}">Voir l’annonce</a>{% endif %}
         </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p class="empty">Vous n'avez pas encore mis de bien en vente.</p>
+    <p class="empty">Vous n’avez pas encore mis de bien en vente.</p>
   {% endif %}
 </section>
 {% endblock %}

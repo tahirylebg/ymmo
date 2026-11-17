@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% from "macros.html" import field, select, form_errors, arches %}
 {% block title %}Estimer et vendre mon bien{% endblock %}
-{% block description %}Estimez gratuitement votre bien à partir des ventes réelles du marché, puis confiez sa vente à l'agence Ymmo la plus proche.{% endblock %}
+{% block description %}Estimez gratuitement votre bien à partir des ventes réelles du marché, puis confiez sa vente à l’agence Ymmo la plus proche.{% endblock %}
 {% block content %}
 <header class="page-head">
   <p class="eyebrow">Vendre</p>
   <h1>Estimer et vendre mon bien</h1>
-  <p class="lead">Obtenez une estimation indicative immédiate, calculée à partir des ventes comparables. Envoyez ensuite votre demande : l'agence Ymmo la plus proche vous recontacte pour une estimation sur place.</p>
+  <p class="lead">Obtenez une estimation indicative immédiate, calculée à partir des ventes comparables. Envoyez ensuite votre demande : l’agence Ymmo la plus proche vous recontacte pour une estimation sur place.</p>
 </header>
 
 {{ form_errors(errors) }}
@@ -27,7 +27,7 @@
       {% if user and user.role.value == 'client' %}
         <button class="btn" type="submit">Envoyer ma demande à une agence</button>
       {% elif user %}
-        <p class="muted small">Le dépôt d'un bien est réservé aux comptes clients.</p>
+        <p class="muted small">Le dépôt d’un bien est réservé aux comptes clients.</p>
       {% else %}
         <a class="btn" href="/connexion?next=/estimer">Se connecter pour envoyer la demande</a>
       {% endif %}
@@ -42,7 +42,7 @@
       <p>Indiquez la surface, l’adresse et la ville, puis «&nbsp;Estimer maintenant&nbsp;»&nbsp;: le prix s’affiche ici.</p>
     </div>
     <p id="estimate-result" class="price-tag" aria-live="polite" aria-atomic="true"></p>
-    <p class="small muted">Calcul : prix moyen au m² des ventes comparables (même ville, sinon même département) multiplié par la surface, ou modèle de régression entraîné sur l'historique des ventes. Ce n'est pas un avis de valeur.</p>
+    <p class="small muted">Calcul : prix moyen au m² des ventes comparables (même ville, sinon même département) multiplié par la surface, ou modèle de régression entraîné sur l’historique des ventes. Ce n’est pas un avis de valeur.</p>
   </aside>
 </div>
 {% endblock %}

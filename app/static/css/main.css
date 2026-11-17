@@ -117,7 +117,7 @@
   --lh-tight: 1.08;
   --lh-snug: 1.4;
   --lh-body: 1.65;
-  --tracking-caps: .18em;
+  --tracking-caps: .14em;
 
   /* ---------- Spacing ---------- */
   --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
@@ -167,7 +167,9 @@ h1, h2, h3 {
 h1 { font-size: var(--fs-h1); letter-spacing: -.025em; }
 h2 { font-size: var(--fs-h2); letter-spacing: -.02em; }
 h3, .h3 { font-size: var(--fs-xl); font-weight: 400; letter-spacing: -.01em; line-height: 1.2; }
+p, li, dd, figcaption, blockquote { text-wrap: pretty; }
 p { margin: 0 0 var(--space-4); }
+.card-title, .lux-head h2, .page-head .lead { text-wrap: balance; }
 strong { font-weight: 600; }
 ::selection { background: var(--brass-200); color: var(--ink-900); }
 a {
@@ -419,7 +421,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 }
 
 /* ---------- Alerts / flash messages ---------- */
-.alert { padding: var(--space-4) var(--space-5); margin-bottom: var(--space-5); border-left: 2px solid; }
+/* Full hairline frame + tinted ground (no coloured side stripe) */
+.alert { padding: var(--space-4) var(--space-5); margin-bottom: var(--space-5); border: var(--border-w) solid; }
 .alert > :last-child { margin-bottom: 0; }
 .alert-success { background: var(--c-success-soft); border-color: var(--c-success); color: var(--c-success-text); }
 .alert-error { background: var(--c-danger-soft); border-color: var(--c-danger); color: var(--c-danger-text); }
@@ -495,7 +498,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 }
 @media (min-width: 48rem) { .hero-stats { gap: var(--space-8); } }
 .hero-stats li { display: flex; flex-direction: column; gap: var(--space-1); }
-.hero-stats strong { font: 300 clamp(2rem, 1.5rem + 1.5vw, 2.75rem)/1 var(--font-serif); color: var(--c-on-dark); font-variant-numeric: lining-nums; }
+.hero-stats strong { font: 300 clamp(2rem, 1.5rem + 1.5vw, 2.75rem)/1 var(--font-serif); color: var(--c-on-dark); font-variant-numeric: lining-nums tabular-nums; }
 .hero-stats strong small { font-size: .45em; font-weight: 400; color: var(--c-on-dark-muted); }
 .hero-stats span { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-on-dark-muted); }
 
@@ -779,8 +782,10 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0 var(--space-6); margin: 0 0 var(--space-5); border-top: var(--border-hair); }
 .facts div { padding: var(--space-5) 0; border-bottom: var(--border-hair); }
 .facts dt { font-size: .625rem; font-weight: 600; color: var(--c-muted); }
-.facts dd { margin: var(--space-2) 0 0; font: 400 var(--fs-xl)/1.25 var(--font-serif); color: var(--c-heading); font-variant-numeric: lining-nums; }
+.facts dd { margin: var(--space-2) 0 0; font: 400 var(--fs-xl)/1.25 var(--font-serif); color: var(--c-heading); font-variant-numeric: lining-nums tabular-nums; }
 .price-tag { font: 300 clamp(2rem, 1.5rem + 1.6vw, 2.75rem)/1.05 var(--font-serif); color: var(--c-heading); margin-bottom: var(--space-2); letter-spacing: -.02em; font-variant-numeric: lining-nums; }
+/* Figures that line up or count up (prices, estimate counter) keep a fixed width per digit */
+.card-price, .price-tag { font-variant-numeric: lining-nums tabular-nums; }
 .price-sub { font-size: var(--fs-sm); color: var(--c-muted); margin-bottom: var(--space-5); }
 .panel { background: var(--c-paper); border: var(--border-hair); padding: var(--panel-pad); margin-bottom: var(--space-4); }
 .panel h2, .panel h3 { margin-bottom: var(--space-4); }
