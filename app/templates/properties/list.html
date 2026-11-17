@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import property_card, pagination %}
 {% block title %}Biens à vendre{% if filters.city %} à {{ filters.city }}{% endif %}{% endblock %}
+{% block description %}{{ page.total }} bien{{ 's' if page.total != 1 }} à vendre{% if filters.city %} à {{ filters.city }}{% endif %} : appartements, maisons, terrains et locaux professionnels présentés par les agences Ymmo.{% endblock %}
 
 {% block content %}
 <header class="page-head">
@@ -82,7 +83,9 @@
     {% if page.items %}
       <ul class="card-grid">
         {% for prop in page.items %}
-          <li>{{ property_card(prop, user, favorite_ids, back=request.url.path ~ ('?' ~ request.url.query if request.url.query else '')) }}</li>
+          {# The first row is on screen at load: no lazy loading there, the first photo first #}
+          <li>{{ property_card(prop, user, favorite_ids, back=request.url.path ~ ('?' ~ request.url.query if request.url.query else ''),
+                               eager='high' if loop.first else loop.index <= 3) }}</li>
         {% endfor %}
       </ul>
       {{ pagination(page, page_url) }}

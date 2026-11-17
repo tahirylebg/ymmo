@@ -17,16 +17,16 @@
   {{ prop.category|label }} à {{ prop.city.name }}{% if photo.alt_text %} – {{ photo.alt_text }}{% endif %}
 {%- endmacro %}
 
-{# Brand motif: a Mediterranean arcade drawn with hairlines (decorative only). #}
+{# Brand motif: a Mediterranean arcade in true perspective, drawn with hairlines (decorative only).
+   Piers with thickness (two strokes), a few voussoirs, entablement and a very light cast shadow.
+   The geometry is projected once per bay count in app/web/arcade.py. #}
 {% macro arches(count=5, cls='arches') -%}
-<svg class="{{ cls }}" viewBox="0 0 1200 560" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" preserveAspectRatio="xMidYMax meet">
-  {%- set w = 1200 / count %}
-  {%- for i in range(count) %}
-    {%- set x = i * w %}{%- set r = w / 2 - 18 %}{%- set cx = x + w / 2 %}
-    <path vector-effect="non-scaling-stroke" d="M{{ cx - r }} 560V{{ 560 - 1.9 * r }}A{{ r }} {{ r }} 0 0 1 {{ cx + r }} {{ 560 - 1.9 * r }}V560"/>
-    <path vector-effect="non-scaling-stroke" opacity=".55" d="M{{ cx - r + 14 }} 560V{{ 560 - 1.9 * r }}A{{ r - 14 }} {{ r - 14 }} 0 0 1 {{ cx + r - 14 }} {{ 560 - 1.9 * r }}V560"/>
-  {%- endfor %}
-  <path vector-effect="non-scaling-stroke" opacity=".4" d="M0 {{ 560 - 1.9 * (1200 / count / 2 - 18) - (1200 / count / 2 - 18) - 40 }}H1200"/>
+{%- set d = arcade_paths(count) %}
+<svg class="{{ cls }}" viewBox="0 0 1200 560" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1" preserveAspectRatio="xMidYMax meet">
+  <path d="{{ d.shadow }}" fill="currentColor" fill-opacity=".09" fill-rule="evenodd" stroke="none"/>
+  <path vector-effect="non-scaling-stroke" d="{{ d.main }}"/>
+  <path vector-effect="non-scaling-stroke" opacity=".5" d="{{ d.reveal }}"/>
+  <path vector-effect="non-scaling-stroke" opacity=".45" d="{{ d.voussoirs }}"/>
 </svg>
 {%- endmacro %}
 
@@ -35,12 +35,18 @@
   <div class="placeholder" aria-hidden="true">{{ arches(3) }}<span>{{ prop.category|label }}</span></div>
 {%- endmacro %}
 
-{% macro media(prop, size='thumb', eager=False) -%}
+{# Card photo. `sizes` follows the card grid: 3 columns from 64rem (max ~26rem each),
+   2 columns from 40rem, full width below; the browser picks the 640w thumbnail or the
+   1600w original accordingly. #}
+{% set CARD_SIZES = '(min-width: 64rem) 26rem, (min-width: 40rem) calc(50vw - 4rem), calc(100vw - 2rem)' %}
+{% macro media(prop, size='thumb', eager=False, sizes=CARD_SIZES) -%}
   {% set photo = prop.cover_photo %}
   {% if photo %}
-    <img src="/media/{{ photo.file_path.replace('.webp', '_thumb.webp') if size == 'thumb' else photo.file_path }}"
+    {% set full = '/media/' ~ photo.file_path %}
+    {% set thumb = '/media/' ~ photo.file_path.replace('.webp', '_thumb.webp') %}
+    <img src="{{ thumb if size == 'thumb' else full }}" srcset="{{ thumb }} 640w, {{ full }} 1600w" sizes="{{ sizes }}"
          alt="{{ photo_alt(prop, photo) }}" width="640" height="480"
-         {% if not eager %}loading="lazy"{% endif %} decoding="async">
+         {% if eager == 'high' %}fetchpriority="high"{% elif not eager %}loading="lazy"{% endif %} decoding="async">
   {% else %}
     {{ no_photo(prop) }}
   {% endif %}
@@ -56,10 +62,11 @@
 </form>
 {%- endmacro %}
 
-{% macro property_card(prop, user=None, favorite_ids=(), back='/biens', heading='h3') -%}
+{# eager: False (lazy, default), True (above the fold) or 'high' (likely LCP image). #}
+{% macro property_card(prop, user=None, favorite_ids=(), back='/biens', heading='h3', sizes=None, eager=False) -%}
 <article class="property-card" aria-labelledby="prop-{{ prop.id }}-title">
   <div class="card-media">
-    {{ media(prop) }}
+    {{ media(prop, eager=eager, sizes=sizes or CARD_SIZES) }}
     {% if prop.status.value != 'available' %}<span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span>{% endif %}
   </div>
   {% if user and user.role.value == 'client' %}{{ favorite_button(prop, prop.id in favorite_ids, back) }}{% endif %}

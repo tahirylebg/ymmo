@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import field, select, form_errors %}
 {% block title %}{{ "Modifier " ~ prop.reference if prop else "Publier un bien" }}{% endblock %}
+{% block description %}Back-office Ymmo : {{ 'modification du bien ' ~ prop.reference if prop else 'publication d’un nouveau bien' }}.{% endblock %}
 {% block content %}
 {% set v = values if values else ({
   'title': prop.title, 'description': prop.description, 'price': prop.price|int,

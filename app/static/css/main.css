@@ -12,15 +12,30 @@
 
 @font-face {
   font-family: "Newsreader";
-  src: url("../fonts/newsreader-latin-opsz-normal.woff2") format("woff2-variations"),
-       url("../fonts/newsreader-latin-opsz-normal.woff2") format("woff2");
-  font-weight: 200 800; font-style: normal; font-display: swap;
+  src: url("../fonts/newsreader-latin-opsz-wght200-400.woff2") format("woff2-variations"),
+       url("../fonts/newsreader-latin-opsz-wght200-400.woff2") format("woff2");
+  font-weight: 200 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "Public Sans";
   src: url("../fonts/public-sans-latin-wght-normal.woff2") format("woff2-variations"),
        url("../fonts/public-sans-latin-wght-normal.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
+}
+/* Metric-matched local fallbacks: while the web fonts load (font-display: swap) the text is set
+   in Georgia / Times / Arial resized to the same advance widths and line metrics, so the swap
+   does not move the layout. Values measured with fontTools on the files above. */
+@font-face {
+  font-family: "Newsreader Fallback"; src: local("Georgia");
+  size-adjust: 93.4%; ascent-override: 78.7%; descent-override: 28.4%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Newsreader Fallback Times"; src: local("Times New Roman");
+  size-adjust: 103%; ascent-override: 71.4%; descent-override: 25.7%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Public Sans Fallback"; src: local("Arial");
+  size-adjust: 104.7%; ascent-override: 90.7%; descent-override: 21.5%; line-gap-override: 0%;
 }
 
 :root {
@@ -86,8 +101,8 @@
   --c-neutral-soft: var(--ivory-300);
 
   /* ---------- Typography ---------- */
-  --font-serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Newsreader", "Newsreader Fallback", "Newsreader Fallback Times", Georgia, serif;
+  --font-sans: "Public Sans", "Public Sans Fallback", system-ui, -apple-system, "Segoe UI", sans-serif;
   --fs-2xs: .6875rem;  /* spaced capitals */
   --fs-xs: .8125rem;
   --fs-sm: .875rem;
@@ -199,12 +214,13 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
   font: 600 var(--fs-2xs)/1 var(--font-sans); letter-spacing: var(--tracking-caps); text-transform: uppercase;
   color: var(--c-heading); text-decoration: none;
 }
+/* The rule is drawn at its hover length and scaled down: only transform is animated (no layout) */
 .link-arrow::after {
-  content: ""; width: 2.5rem; height: 1px; background: currentColor;
-  transition: width var(--dur) var(--ease);
+  content: ""; width: 4rem; margin-right: -1.5rem; height: 1px; background: currentColor;
+  transform: scaleX(.625); transform-origin: left; transition: transform var(--dur) var(--ease);
 }
 .link-arrow:hover { color: var(--c-accent); }
-.link-arrow:hover::after { width: 4rem; }
+.link-arrow:hover::after { transform: none; }
 
 /* ---------- Header / navigation ---------- */
 .site-header {
@@ -259,7 +275,9 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 
 /* Home: header floats over the dark hero, becomes solid once the page scrolls */
 .page-home .site-header {
-  position: fixed; inset: 0 0 auto; background: transparent; border-color: var(--c-dark-rule); color: var(--c-on-dark);
+  position: fixed; inset: 0 0 auto; border-color: var(--c-dark-rule); color: var(--c-on-dark);
+  /* A soft ink veil (instead of plain transparency) keeps the links legible over the hero scene */
+  background: linear-gradient(color-mix(in srgb, var(--ink-900) 72%, transparent), color-mix(in srgb, var(--ink-900) 0%, transparent));
 }
 .page-home .site-header .brand, .page-home .site-header .brand-tag { color: inherit; }
 .page-home .site-header .brand-tag { border-color: var(--c-dark-rule); color: var(--c-on-dark-muted); }
@@ -359,10 +377,11 @@ select::-ms-expand { display: none; }
 .field-error { color: var(--c-danger); font-size: var(--fs-sm); font-weight: 600; }
 .field-error::before { content: "⚠ "; }
 .form-grid { display: grid; gap: 0 var(--space-6); }
-@media (min-width: 40rem) { .form-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 60rem) { .form-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .form-card { background: var(--c-paper); border: var(--border-hair); padding: var(--space-5); }
-@media (min-width: 40rem) { .form-card { padding: var(--space-7); } }
+@media (min-width: 40rem) {
+  .form-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-card { padding: var(--space-7); }
+}
 .form-narrow { max-width: 32rem; margin-inline: auto; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 
@@ -408,13 +427,35 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hero::before {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(60rem 40rem at 78% 70%, color-mix(in srgb, var(--brass-500) 38%, transparent), transparent 70%),
+    radial-gradient(60rem 40rem at var(--hero-glow, 78% 70%), color-mix(in srgb, var(--brass-500) 38%, transparent), transparent 70%),
     radial-gradient(40rem 30rem at 15% 10%, color-mix(in srgb, var(--ink-800) 90%, transparent), transparent 70%);
 }
 .hero .arches {
-  position: absolute; right: -6%; bottom: 0; width: min(78rem, 120%); height: auto;
+  position: absolute; right: 0; bottom: 0; width: min(58rem, 115%); height: auto;
   color: var(--c-on-dark-accent); opacity: .55; pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease);
 }
+/* 3D arcade (hero-arcade.js). The canvas only exists with JS, which places it from the real text
+   box (--arcade-*): beside the copy on desktop, under the figures on small screens. The SVG above
+   is hidden only once the first frame is drawn. */
+.hero-arcade {
+  position: absolute; left: var(--arcade-left, 0px); top: var(--arcade-top, 0px);
+  width: calc(100% - var(--arcade-left, 0px)); height: calc(100% - var(--arcade-top, 0px));
+  pointer-events: none; opacity: 0; transition: opacity var(--dur-slow) var(--ease);
+  /* Small screens: a faint veil behind the figures (AA kept), full strength below them */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, rgb(0 0 0 / .1) 3rem, rgb(0 0 0 / .1) var(--arcade-solid, 50%), #000 calc(var(--arcade-solid, 50%) + 3rem));
+  mask-image: linear-gradient(to bottom, transparent, rgb(0 0 0 / .1) 3rem, rgb(0 0 0 / .1) var(--arcade-solid, 50%), #000 calc(var(--arcade-solid, 50%) + 3rem));
+}
+.hero.has-arcade-3d .hero-arcade { opacity: 1; }
+.hero.has-arcade-3d .arches { opacity: 0; }
+@media (min-width: 64rem) {
+  .hero-arcade {
+    -webkit-mask-image: linear-gradient(to right, transparent 3rem, #000 16rem);
+    mask-image: linear-gradient(to right, transparent 3rem, #000 16rem);
+  }
+}
+/* Stacked layouts: the warm glow sits lower, behind the search panel rather than the figures */
+@media (max-width: 63.99rem) { .hero { --hero-glow: 80% 96%; } }
 .hero > .container { position: relative; }
 .hero .eyebrow { color: var(--c-on-dark-accent); }
 .hero h1 {
@@ -625,10 +666,6 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 
 /* ---------- Search page layout ---------- */
 .search-layout { display: grid; gap: var(--space-6); }
-@media (min-width: 64rem) {
-  .search-layout { grid-template-columns: 17rem 1fr; gap: var(--space-9); align-items: start; }
-  .filters { position: sticky; top: var(--sticky-top); }
-}
 .filters .form-card { padding: 0; background: transparent; border: 0; }
 .filters details summary {
   cursor: pointer; list-style: none;
@@ -640,7 +677,11 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .filters details summary::-webkit-details-marker { display: none; }
 .filters details summary::after { content: "+"; font: 300 var(--fs-xl)/1 var(--font-serif); }
 .filters details[open] summary::after { content: "−"; }
-@media (min-width: 64rem) { .filters details summary { display: none; } }
+@media (min-width: 64rem) {
+  .search-layout { grid-template-columns: 17rem 1fr; gap: var(--space-9); align-items: start; }
+  .filters { position: sticky; top: var(--sticky-top); }
+  .filters details summary { display: none; }
+}
 .results-bar {
   display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-3);
   margin-bottom: var(--space-7); padding-bottom: var(--space-4); border-bottom: var(--border-hair);

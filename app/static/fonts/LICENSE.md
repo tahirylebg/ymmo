@@ -5,5 +5,5 @@ et servies depuis ce dossier (la CSP `default-src 'self'` interdit les polices e
 
 | Fichier | Police | Auteur | Source |
 |---|---|---|---|
-| `newsreader-latin-opsz-normal.woff2` | Newsreader (variable, axes `opsz` + `wght`), sous-ensemble latin | Production Type | `@fontsource-variable/newsreader@5.2.10` |
+| `newsreader-latin-opsz-wght200-400.woff2` | Newsreader (variable, axes `opsz` + `wght` réduit à 200–400, les seules graisses utilisées), sous-ensemble latin | Production Type | `@fontsource-variable/newsreader@5.2.10`, axe restreint avec `fontTools.varLib.instancer` (`wght=200:400`) |
 | `public-sans-latin-wght-normal.woff2` | Public Sans (variable, axe `wght`), sous-ensemble latin | USWDS | `@fontsource-variable/public-sans@5.2.7` |

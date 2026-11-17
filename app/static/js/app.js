@@ -19,7 +19,8 @@
   const header = document.querySelector("[data-header]");
   if (header) {
     const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 24);
-    onScroll();
+    // First read on the next frame: reading scrollY during start-up would force a layout.
+    requestAnimationFrame(onScroll);
     window.addEventListener("scroll", onScroll, { passive: true });
   }
 
@@ -37,6 +38,28 @@
       });
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
     revealables.forEach((el) => observer.observe(el));
+  }
+
+  // Home hero: 3D arcade, fetched only after the page has loaded and gone idle, only while the
+  // hero is on screen, never with reduced motion or data saver. The SVG stays as the fallback.
+  const hero = document.querySelector(".hero[data-arcade-src]");
+  if (hero && !reduceMotion && !navigator.connection?.saveData
+      && "IntersectionObserver" in window && "WebGLRenderingContext" in window) {
+    const loadArcade = () => {
+      const observer = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        import(hero.dataset.arcadeSrc).then((module) => module.mount(hero)).catch(() => {});
+      });
+      observer.observe(hero);
+    };
+    // Wait for the web fonts too: the title's final paint (the LCP) must not queue behind 3D work.
+    const whenIdle = () => (document.fonts?.ready ?? Promise.resolve()).then(() => (
+      "requestIdleCallback" in window
+        ? window.requestIdleCallback(loadArcade, { timeout: 3000 })
+        : window.setTimeout(loadArcade, 300)));
+    if (document.readyState === "complete") whenIdle();
+    else window.addEventListener("load", whenIdle, { once: true });
   }
 
   // Search filters start collapsed on small screens (results first).

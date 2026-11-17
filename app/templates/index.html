@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% from "macros.html" import property_card, arches %}
 {% block title %}Achat et vente de biens immobiliers{% endblock %}
+{% block description %}{{ total_available }} appartements, maisons et locaux professionnels à vendre dans nos {{ agencies|length }} agences en France, estimés à partir des ventes réelles du marché.{% endblock %}
 {% block body_class %}page-home{% endblock %}
 
 {% block hero %}
-<section class="hero" aria-labelledby="hero-title">
+<section class="hero" aria-labelledby="hero-title"
+         data-arcade-src="{{ url_for('static', path='js/hero-arcade.js') }}?v={{ ASSET_VERSION }}">
   {{ arches(5) }}
   <div class="container">
     <p class="eyebrow">Réseau immobilier · {{ agencies|length }} agences en France</p>
@@ -57,7 +59,9 @@
   </div>
   <ul class="card-grid card-grid-3 card-grid-feature">
     {% for prop in latest %}
-      <li data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">{{ property_card(prop, user, favorite_ids, back='/') }}</li>
+      {# The first listing spans two columns and two rows on desktop (~54rem wide) #}
+      <li data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">{{ property_card(prop, user, favorite_ids, back='/',
+          sizes='(min-width: 64rem) 54rem, (min-width: 40rem) calc(50vw - 4rem), calc(100vw - 2rem)' if loop.first else None) }}</li>
     {% endfor %}
   </ul>
 </section>

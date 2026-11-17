@@ -2,6 +2,40 @@
 {% from "macros.html" import photo_alt, no_photo %}
 {% block title %}{{ prop.title }}{% endblock %}
 {% block description %}{{ prop.title }} · {{ prop.price|euros }} · {{ prop.surface_m2|number }} m² à {{ prop.city.name }}.{% endblock %}
+{% set base = request.base_url|string %}
+{% block og_image %}{% if prop.photos %}{{ base }}media/{{ prop.photos[0].file_path }}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block head_extra %}
+{#- Structured data (schema.org RealEstateListing), serialised with tojson (HTML-safe). #}
+{%- set availability = {'available': 'InStock', 'under_offer': 'LimitedAvailability'}.get(prop.status.value, 'SoldOut') %}
+{%- set place = {
+  '@type': 'Accommodation' if prop.property_type.value != 'professional' else 'Place',
+  'address': {
+    '@type': 'PostalAddress', 'streetAddress': prop.address, 'postalCode': prop.city.postal_code,
+    'addressLocality': prop.city.name, 'addressCountry': 'FR',
+  },
+} %}
+{%- if prop.property_type.value != 'professional' %}
+  {%- set _ = place.update({'floorSize': {'@type': 'QuantitativeValue', 'value': prop.surface_m2, 'unitCode': 'MTK'}}) %}
+  {%- if prop.rooms %}{% set _ = place.update({'numberOfRooms': prop.rooms}) %}{% endif %}
+{%- endif %}
+{%- set listing = {
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateListing',
+  'name': prop.title,
+  'description': prop.description or (prop.category|label ~ ' à ' ~ prop.city.name),
+  'url': request.url.replace(query='', fragment='')|string,
+  'datePosted': prop.published_at.date().isoformat() if prop.published_at else none,
+  'image': [],
+  'offers': {
+    '@type': 'Offer', 'price': prop.price|float, 'priceCurrency': 'EUR',
+    'availability': 'https://schema.org/' ~ availability,
+  },
+  'about': place,
+} %}
+{%- for photo in prop.photos %}{% set _ = listing.image.append(base ~ 'media/' ~ photo.file_path) %}{% endfor %}
+{%- if not listing.image %}{% set _ = listing.image.append(url_for('static', path='img/og-ymmo.jpg')|string) %}{% endif %}
+<script type="application/ld+json">{{ listing|tojson }}</script>
+{% endblock %}
 
 {% block content %}
 <nav class="breadcrumb" aria-label="Fil d'Ariane">
@@ -31,9 +65,15 @@
         {% for photo in prop.photos %}
           <figure>
             <a href="/media/{{ photo.file_path }}">
-              <img src="/media/{{ photo.file_path if loop.first else photo.file_path.replace('.webp', '_thumb.webp') }}"
-                   alt="{{ photo_alt(prop, photo) }}" width="{{ 1600 if loop.first else 640 }}" height="{{ 1200 if loop.first else 480 }}"
-                   {% if not loop.first %}loading="lazy"{% endif %} decoding="async">
+              {% set thumb = '/media/' ~ photo.file_path.replace('.webp', '_thumb.webp') %}
+              {% if loop.first %}
+              {# Main photo (LCP): fetched first; thumbnail on small screens, original elsewhere #}
+              <img src="/media/{{ photo.file_path }}" srcset="{{ thumb }} 640w, /media/{{ photo.file_path }} 1600w"
+                   sizes="(min-width: 64rem) min(53rem, 60vw), calc(100vw - 2rem)"
+                   alt="{{ photo_alt(prop, photo) }}" width="1600" height="1200" fetchpriority="high" decoding="async">
+              {% else %}
+              <img src="{{ thumb }}" alt="{{ photo_alt(prop, photo) }}" width="640" height="480" loading="lazy" decoding="async">
+              {% endif %}
               <span class="visually-hidden">(agrandir, photo {{ loop.index }} sur {{ count }})</span>
             </a>
           </figure>
