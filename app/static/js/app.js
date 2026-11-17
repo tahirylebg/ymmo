@@ -24,6 +24,32 @@
     window.addEventListener("scroll", onScroll, { passive: true });
   }
 
+  // Lists marked data-stagger reveal their items one after the other (cycle of 6 per row band).
+  document.querySelectorAll("[data-stagger]").forEach((list) => {
+    [...list.children].forEach((item, index) => {
+      item.setAttribute("data-reveal", "");
+      item.style.setProperty("--reveal-i", index % 6);
+    });
+  });
+
+  // Cross-document view transition: the clicked listing photo becomes the detail gallery photo
+  // (and the reverse on the way back). Only the photo involved gets the shared name.
+  const detailId = (url) => url && new URL(url).pathname.match(/^\/biens\/(\d+)$/)?.[1];
+  const cardPhoto = (id) => id && document.querySelector(`.property-card a[href="/biens/${id}"]`)
+    ?.closest(".property-card")?.querySelector(".card-media img");
+  const nameDuring = (img, transition) => {
+    if (!img || !transition) return;
+    img.style.viewTransitionName = "listing-photo";
+    transition.finished.finally(() => { img.style.viewTransitionName = ""; });
+  };
+  window.addEventListener("pageswap", (event) => {
+    nameDuring(cardPhoto(detailId(event.activation?.entry?.url)), event.viewTransition);
+  });
+  window.addEventListener("pagereveal", (event) => {
+    if (!event.viewTransition || !window.navigation?.activation) return;
+    nameDuring(cardPhoto(detailId(navigation.activation.from?.url)), event.viewTransition);
+  });
+
   // Gentle reveal on scroll; skipped entirely when the user prefers reduced motion.
   const revealables = document.querySelectorAll("[data-reveal]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

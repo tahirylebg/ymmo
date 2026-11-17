@@ -92,7 +92,7 @@
     </div>
 
     {% if page.items %}
-      <ul class="card-grid">
+      <ul class="card-grid" data-stagger>
         {% for prop in page.items %}
           {# The first row is on screen at load: no lazy loading there, the first photo first #}
           <li>{{ property_card(prop, user, favorite_ids, back=request.url.path ~ ('?' ~ request.url.query if request.url.query else ''),

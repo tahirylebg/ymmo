@@ -24,6 +24,30 @@
   <link rel="preload" href="{{ url_for('static', path='fonts/public-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}?v={{ ASSET_VERSION }}">
   <script src="{{ url_for('static', path='js/app.js') }}?v={{ ASSET_VERSION }}" defer></script>
+  {# Listing pages load ahead: a detail page is prerendered on hover, result pages prefetched.
+     Read-only GET pages only: never the logout, the back-office or anything that writes. #}
+  <script type="speculationrules">
+  {
+    "prerender": [{
+      "where": {"and": [
+        {"href_matches": {"pathname": "/biens/:id([0-9]+)"}},
+        {"not": {"selector_matches": "[data-no-prefetch]"}}
+      ]},
+      "eagerness": "moderate"
+    }],
+    "prefetch": [{
+      "where": {"and": [
+        {"or": [
+          {"href_matches": {"pathname": "/biens"}},
+          {"href_matches": {"pathname": "/"}},
+          {"href_matches": {"pathname": "/estimer"}}
+        ]},
+        {"not": {"selector_matches": "[data-no-prefetch]"}}
+      ]},
+      "eagerness": "moderate"
+    }]
+  }
+  </script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">Aller au contenu principal</a>

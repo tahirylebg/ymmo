@@ -225,7 +225,15 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 /* ---------- Header / navigation ---------- */
 .site-header {
   background: var(--c-bg); border-bottom: var(--border-hair); position: sticky; top: 0; z-index: 50;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.site-header .container > * { transition: transform var(--dur) var(--ease); }
+/* Desktop, once scrolled: 80 → 64 px with transforms only (no layout shift). The bar slides up
+   by 1rem and its content comes back down by half of it, so it stays centred. */
+@media (min-width: 64rem) {
+  .site-header.is-scrolled:not(.is-open) { transform: translateY(-1rem); }
+  .site-header.is-scrolled:not(.is-open) .container > * { transform: translateY(.5rem); }
+  .site-header.is-scrolled:not(.is-open) .brand { transform: translateY(.5rem) scale(.86); transform-origin: left center; }
 }
 .site-header .container { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: var(--header-h); flex-wrap: wrap; }
 .brand { display: inline-flex; align-items: center; gap: var(--space-3); padding-block: var(--space-3); text-decoration: none; color: var(--c-heading); }
@@ -883,7 +891,18 @@ td select, td input { height: var(--control-h-sm); }
 .js-reveal [data-reveal] { opacity: 0; transform: translateY(1.5rem); transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease); }
 .js-reveal [data-reveal].is-visible { opacity: 1; transform: none; }
 .js-reveal [data-reveal-delay="1"] { transition-delay: 120ms; }
+/* Lists marked data-stagger: items arrive one after the other (index set by app.js) */
+.js-reveal [data-stagger] > [data-reveal] { transition-delay: calc(var(--reveal-i, 0) * 70ms); }
 .js-reveal [data-reveal-delay="2"] { transition-delay: 240ms; }
+
+/* Page changes cross-fade; a listing photo grows into the detail gallery (app.js names it) */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-group(root) { animation-duration: 260ms; }
+  ::view-transition-group(listing-photo) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
+  ::view-transition-old(listing-photo), ::view-transition-new(listing-photo) { height: 100%; object-fit: cover; }
+}
+.gallery > figure:first-child img { view-transition-name: listing-photo; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

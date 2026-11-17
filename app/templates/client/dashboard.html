@@ -17,7 +17,7 @@
 <section id="favoris" class="dash-section" aria-labelledby="fav-title">
   <h2 id="fav-title">Mes favoris</h2>
   {% if dashboard.favorites %}
-    <ul class="card-grid">
+    <ul class="card-grid" data-stagger>
       {% for fav in dashboard.favorites %}
         <li>{{ property_card(fav.listing, user, [fav.property_id], back='/mon-espace#favoris') }}</li>
       {% endfor %}

@@ -22,7 +22,7 @@
   <p class="alert alert-info" role="status">{{ error }}</p>
 {% else %}
 <h2 class="visually-hidden">Indicateurs clés</h2>
-<ul class="kpis">
+<ul class="kpis" data-stagger>
   {% for label_text, value in data.kpis.items() %}
     <li class="kpi"><span class="kpi-value">{{ value }}</span><span class="kpi-label">{{ label_text }}</span></li>
   {% endfor %}

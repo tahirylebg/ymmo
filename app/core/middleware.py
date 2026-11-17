@@ -8,7 +8,9 @@ from starlette.responses import PlainTextResponse
 
 # Swagger UI loads its assets from a CDN, so it gets a slightly wider policy.
 _STRICT_CSP = (
-    "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+    # 'inline-speculation-rules' only allows the JSON prefetch rules in base.html, no script.
+    "default-src 'self'; img-src 'self' data:; style-src 'self'; "
+    "script-src 'self' 'inline-speculation-rules'; "
     "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 )
 _DOCS_CSP = (
