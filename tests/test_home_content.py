@@ -1,4 +1,4 @@
-"""Home page content: featured listing, market figure, agencies map."""
+"""Home page content: featured listing, market figures, estimate prefill, agencies map."""
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -26,17 +26,41 @@ def test_card_title_drops_category_and_city_but_keeps_them_for_screen_readers(cl
 def test_median_days_to_sell(db, world):
     repo = TransactionRepository(db)
     assert repo.median_days_to_sell() is None
+    start = date.today() - timedelta(days=120)
     for prop, days in ((world["flat"], 30), (world["house"], 90), (world["office"], 60)):
-        prop.published_at = datetime(2025, 1, 1)
-        db.add(
-            Transaction(
-                property_id=prop.id,
-                final_price=Decimal("1000"),
-                signed_at=date(2025, 1, 1) + timedelta(days=days),
-            )
-        )
+        prop.published_at = datetime.combine(start, datetime.min.time())
+        db.add(Transaction(property_id=prop.id, final_price=Decimal("1000"), signed_at=start + timedelta(days=days)))
     db.commit()
     assert repo.median_days_to_sell() == 60
+    # Prices per m² of homes only: 1000/50 = 20 and 1000/140 ≈ 7.1 -> median ≈ 13.6 (office left out)
+    assert repo.market_summary() == {"sales": 3, "median_days": 60, "median_price_m2": 14}
+    # Sales older than the window are not counted.
+    assert repo.market_summary(window_days=10)["sales"] == 0
+
+
+def test_estimate_page_is_prefilled_from_the_home_mini_form(client, world):
+    city = world["flat"].city_id
+    html = client.get(f"/estimer?city_id={city}&surface_m2=72.5&category=office").text
+    assert f'<option value="{city}" selected' in html
+    assert 'value="72.5"' in html
+    assert '<option value="office" selected' in html
+    # The usage follows the category, so the pair is valid as sent
+    assert '<option value="professional" selected' in html
+
+
+def test_estimate_page_ignores_invalid_prefill(client, world):
+    html = client.get("/estimer?city_id=abc&surface_m2=-4&category=castle&address=x").text
+    assert "selected" not in html.split('name="city_id"')[1].split("</select>")[0]
+    assert 'value="-4"' not in html
+    assert '<option value="apartment" selected' in html  # the form default
+    # Digits that are not ASCII (int() rejects them) are dropped too, not a server error.
+    assert client.get("/estimer?city_id=%C2%B2").status_code == 200
+
+
+def test_estimate_login_link_keeps_the_prefill(client, world):
+    html = client.get("/estimer?surface_m2=72&category=house").text
+    assert "/connexion?next=/estimer%3Fsurface_m2%3D72%26category%3Dhouse" in html
+    assert 'value="x"' not in html  # only the three mini-form fields are read
 
 
 def test_agencies_map_places_cities_inside_the_outline():

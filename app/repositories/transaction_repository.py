@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.models import Property, Transaction
+from app.models.enums import PropertyCategory
 from app.repositories.base import BaseRepository
 
 
@@ -37,20 +38,37 @@ class TransactionRepository(BaseRepository[Transaction]):
         )
         return list(self.db.scalars(stmt))
 
-    def median_days_to_sell(self, window_days: int = 365) -> int | None:
-        """Median days between publication and signature, over the latest `window_days`
-        of sales (counted back from the most recent one, so seeded history works too)."""
-        latest = self.db.scalar(select(func.max(Transaction.signed_at)))
-        if latest is None:
-            return None
+    def market_summary(self, window_days: int = 365) -> dict[str, float | int | None]:
+        """Figures of the sales signed in the last `window_days`: number of sales, median days
+        between publication and signature, and median price per m² of homes (apartments and
+        houses: land and commercial premises would drag it far from what a homeowner expects)."""
+        empty = {"sales": 0, "median_days": None, "median_price_m2": None}
         rows = self.db.execute(
-            select(Transaction.signed_at, Property.published_at)
+            select(
+                Transaction.signed_at,
+                Transaction.final_price,
+                Property.published_at,
+                Property.surface_m2,
+                Property.category,
+            )
             .join(Property, Property.id == Transaction.property_id)
-            .where(Transaction.signed_at >= latest - timedelta(days=window_days))
+            .where(Transaction.signed_at >= date.today() - timedelta(days=window_days))
         ).all()
-        days = [(signed - published.date()).days for signed, published in rows]
+        if not rows:
+            return empty
+        days = [(r.signed_at - r.published_at.date()).days for r in rows]
         days = [d for d in days if d >= 0]
-        return round(statistics.median(days)) if days else None
+        homes = {PropertyCategory.APARTMENT, PropertyCategory.HOUSE}
+        prices = [float(r.final_price) / r.surface_m2 for r in rows if r.surface_m2 and r.category in homes]
+        return {
+            "sales": len(rows),
+            "median_days": round(statistics.median(days)) if days else None,
+            "median_price_m2": round(statistics.median(prices)) if prices else None,
+        }
+
+    def median_days_to_sell(self, window_days: int = 365) -> int | None:
+        """Median days between publication and signature (see market_summary)."""
+        return self.market_summary(window_days)["median_days"]
 
     def totals_since(
         self, since: date, *, agent_id: int | None = None, agency_id: int | None = None

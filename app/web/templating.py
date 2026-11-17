@@ -42,14 +42,14 @@ templates.env.globals["france_map"] = france_map
 
 
 def _asset_version() -> str:
-    """Short hash of every stylesheet and script, appended to their URLs (`?v=`).
+    """Short hash of every stylesheet, script and hero image, appended to their URLs (`?v=`).
 
     Versioned URLs are served with a one-year immutable cache (see app.web.static), so any
-    change to a CSS/JS file, including the vendored Three.js bundle, yields new URLs.
+    change to a CSS/JS file or a re-rendered hero image yields new URLs.
     """
     static_dir = TEMPLATES_DIR.parent / "static"
     digest = hashlib.sha256()
-    for pattern in ("css/**/*.css", "js/**/*.js", "vendor/**/*.js"):
+    for pattern in ("css/**/*.css", "js/**/*.js", "vendor/**/*.js", "img/hero/*"):
         for path in sorted(static_dir.glob(pattern)):
             digest.update(path.relative_to(static_dir).as_posix().encode())
             digest.update(path.read_bytes())

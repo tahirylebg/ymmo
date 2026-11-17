@@ -29,7 +29,7 @@
       {% elif user %}
         <p class="muted small">Le dépôt d’un bien est réservé aux comptes clients.</p>
       {% else %}
-        <a class="btn" href="/connexion?next=/estimer">Se connecter pour envoyer la demande</a>
+        <a class="btn" href="/connexion?next={{ ('/estimer?' ~ request.url.query if request.url.query else '/estimer')|urlencode }}">Se connecter pour envoyer la demande</a>
       {% endif %}
     </div>
   </form>
