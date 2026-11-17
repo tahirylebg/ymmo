@@ -1,5 +1,6 @@
 """FastAPI application factory."""
 
+import mimetypes
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,6 +16,9 @@ from app.web import client as web_client
 from app.web import public as web_public
 from app.web import staff as web_staff
 from app.web.templating import templates
+
+# Slim base images ship without a woff2 entry: fonts would be served as text/plain.
+mimetypes.add_type("font/woff2", ".woff2")
 
 BASE_DIR = Path(__file__).resolve().parent
 

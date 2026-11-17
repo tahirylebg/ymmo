@@ -3,7 +3,11 @@
 {% block title %}Biens à vendre{% if filters.city %} à {{ filters.city }}{% endif %}{% endblock %}
 
 {% block content %}
-<h1>Biens à vendre{% if filters.city %} · {{ filters.city }}{% endif %}</h1>
+<header class="page-head">
+  <p class="eyebrow">Acheter</p>
+  <h1>Biens à vendre{% if filters.city %} · {{ filters.city }}{% endif %}</h1>
+  <p class="lead">Appartements, maisons, terrains et locaux professionnels, présentés par nos agences.</p>
+</header>
 {% if error %}<div class="alert alert-info">{{ error }}</div>{% endif %}
 
 <div class="search-layout">

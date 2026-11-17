@@ -1,12 +1,21 @@
 {% extends "base.html" %}
-{% from "macros.html" import property_card %}
+{% from "macros.html" import property_card, arches %}
 {% block title %}Achat et vente de biens immobiliers{% endblock %}
+{% block body_class %}page-home{% endblock %}
 
 {% block hero %}
 <section class="hero" aria-labelledby="hero-title">
+  {{ arches(5) }}
   <div class="container">
-    <h1 id="hero-title">Trouvez le bien qui vous ressemble, partout en France</h1>
-    <p>{{ total_available }} biens résidentiels et professionnels à vendre dans nos 13 agences, avec une estimation de prix appuyée sur les ventes réelles du marché.</p>
+    <p class="eyebrow">Réseau immobilier · {{ agencies|length }} agences en France</p>
+    <h1 id="hero-title">Des lieux qui vous <em>ressemblent</em>, partout en France</h1>
+    <p class="lead">Appartements, maisons et locaux professionnels, sélectionnés et estimés à partir des ventes réelles du marché.</p>
+
+    <ul class="hero-stats">
+      <li><strong>{{ total_available }}</strong><span>Biens disponibles</span></li>
+      <li><strong>{{ agencies|length }}</strong><span>Agences locales</span></li>
+      <li><strong>1</strong><span>Agent dédié par projet</span></li>
+    </ul>
 
     <form class="search-panel" method="get" action="/biens" role="search" aria-label="Rechercher un bien">
       <div class="form-grid">
@@ -23,56 +32,94 @@
         </div>
         <div class="field">
           <label for="q-max">Budget max (€)</label>
-          <input id="q-max" name="max_price" type="number" min="0" step="10000" inputmode="numeric">
+          <input id="q-max" name="max_price" type="number" min="0" step="10000" inputmode="numeric" placeholder="Sans limite">
         </div>
         <div class="field">
           <label for="q-rooms">Pièces min.</label>
-          <input id="q-rooms" name="min_rooms" type="number" min="0" max="20" inputmode="numeric">
+          <input id="q-rooms" name="min_rooms" type="number" min="0" max="20" inputmode="numeric" placeholder="Indifférent">
         </div>
         <button class="btn" type="submit">Rechercher</button>
       </div>
     </form>
   </div>
 </section>
+<div class="hero-spacer" aria-hidden="true"></div>
 {% endblock %}
 
 {% block content %}
-<section class="section" aria-labelledby="latest-title">
-  <div class="section-head">
-    <h2 id="latest-title">Nouveautés</h2>
-    <a href="/biens">Voir tous les biens <span aria-hidden="true">→</span></a>
+<section class="lux-section" aria-labelledby="latest-title">
+  <div class="lux-head" data-reveal>
+    <div>
+      <p class="eyebrow">Sélection</p>
+      <h2 id="latest-title">Nos dernières adresses</h2>
+    </div>
+    <a class="link-arrow" href="/biens">Voir tous les biens</a>
   </div>
-  <ul class="card-grid">
+  <ul class="card-grid card-grid-3 card-grid-feature">
     {% for prop in latest %}
-      <li>{{ property_card(prop, user, favorite_ids, back='/') }}</li>
+      <li data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">{{ property_card(prop, user, favorite_ids, back='/') }}</li>
     {% endfor %}
   </ul>
 </section>
 
-<section class="section" aria-labelledby="why-title">
-  <h2 id="why-title">Pourquoi Ymmo ?</h2>
-  <ul class="features">
-    <li>
-      <h3>Estimation fondée sur les données</h3>
-      <p>Notre modèle compare votre bien à des milliers de ventes réelles pour proposer un prix juste.</p>
-      <a href="/estimer">Estimer mon bien</a>
-    </li>
-    <li>
-      <h3>Un agent dédié</h3>
-      <p>Visites, offres, compromis : votre agent local suit chaque étape et vous tient informé en ligne.</p>
-    </li>
-    <li>
-      <h3>Particuliers et professionnels</h3>
-      <p>Appartements, maisons, terrains, bureaux, locaux commerciaux et entrepôts.</p>
-    </li>
-  </ul>
+<section class="lux-section" aria-labelledby="why-title">
+  <div class="split">
+    <div class="split-visual" data-reveal>
+      {{ arches(2) }}
+      <p class="split-figure">{{ agencies|length }}</p>
+      <p class="split-caption">Agences, un même niveau d'exigence</p>
+    </div>
+    <div data-reveal data-reveal-delay="1">
+      <p class="eyebrow">La maison Ymmo</p>
+      <h2 id="why-title">Un accompagnement sur mesure, de la première visite à la signature</h2>
+      <ul class="features">
+        <li>
+          <h3>Une estimation fondée sur les données</h3>
+          <p>Votre bien est comparé à des milliers de ventes réelles pour fixer un prix juste, ni surévalué ni bradé.</p>
+          <a class="link-arrow" href="/estimer">Estimer mon bien</a>
+        </li>
+        <li>
+          <h3>Un agent dédié</h3>
+          <p>Visites, offres, compromis : votre agent local suit chaque étape et vous tient informé en ligne.</p>
+        </li>
+        <li>
+          <h3>Particuliers et professionnels</h3>
+          <p>Appartements, maisons, terrains, bureaux, locaux commerciaux et entrepôts.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
 </section>
 
-<section class="section" aria-labelledby="agencies-title">
-  <h2 id="agencies-title">Nos {{ agencies|length }} agences</h2>
-  <ul class="agency-list">
+<section class="band" aria-labelledby="sell-title">
+  <div class="container">
+    <div data-reveal>
+      <p class="eyebrow">Vendre avec Ymmo</p>
+      <h2 id="sell-title">Combien vaut votre bien aujourd'hui ?</h2>
+    </div>
+    <div data-reveal data-reveal-delay="1">
+      <p>Une première estimation immédiate, puis la visite d'un agent de l'agence la plus proche pour affiner le prix.</p>
+      <a class="btn btn-light" href="/estimer">Estimer mon bien</a>
+    </div>
+  </div>
+</section>
+
+<section class="lux-section" aria-labelledby="agencies-title">
+  <div class="lux-head" data-reveal>
+    <div>
+      <p class="eyebrow">Implantations</p>
+      <h2 id="agencies-title">Nos {{ agencies|length }} agences</h2>
+    </div>
+  </div>
+  <ul class="agency-list" data-reveal>
     {% for agency in agencies %}
-      <li><strong>{{ agency.city.name }}</strong>{% if agency.is_headquarters %} (siège){% endif %} · <a href="/biens?agency_id={{ agency.id }}">voir les biens</a></li>
+      <li>
+        <a href="/biens?agency_id={{ agency.id }}">
+          <span><strong>{{ agency.city.name }}</strong>{% if agency.is_headquarters %} <small>Siège</small>{% endif %}</span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="visually-hidden">: voir les biens de l'agence</span>
+        </a>
+      </li>
     {% endfor %}
   </ul>
 </section>

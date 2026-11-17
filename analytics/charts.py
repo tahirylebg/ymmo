@@ -17,15 +17,18 @@ import pandas as pd  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.ticker import FuncFormatter  # noqa: E402
 
-PRIMARY = "#1d4e5f"
-ACCENT = "#a8471f"
-MUTED = "#8a9298"
-GRID = "#e6e1da"
-INK = "#1c2124"
+# Same palette as app/static/css/main.css (ink primary series, brass secondary series, warm greys)
+PRIMARY = "#1a1814"
+ACCENT = "#a38253"
+MUTED = "#8c8273"
+GRID = "#d6ccbb"
+INK = "#2e2a25"
 
 plt.rcParams.update(
     {
         "font.family": "DejaVu Sans",
+        "figure.facecolor": "none",  # the page provides the background
+        "axes.facecolor": "none",
         "font.size": 10,
         "axes.edgecolor": GRID,
         "axes.labelcolor": INK,

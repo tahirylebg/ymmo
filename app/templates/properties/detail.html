@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import category_icon %}
+{% from "macros.html" import photo_alt, no_photo %}
 {% block title %}{{ prop.title }}{% endblock %}
 {% block description %}{{ prop.title }} · {{ prop.price|euros }} · {{ prop.surface_m2|number }} m² à {{ prop.city.name }}.{% endblock %}
 
@@ -15,24 +15,32 @@
 
 <div class="detail-layout">
   <article aria-labelledby="prop-title">
-    <header>
-      <p><span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span> <span class="muted small">Réf. {{ prop.reference }} · publié le {{ prop.published_at|date_fr }}</span></p>
+    <header class="detail-header">
+      <p class="eyebrow">{{ prop.category|label }} · {{ prop.city.name }}</p>
       <h1 id="prop-title">{{ prop.title }}</h1>
+      <div class="detail-meta">
+        <span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span>
+        <span class="muted small">Réf. {{ prop.reference }} · publié le {{ prop.published_at|date_fr }}</span>
+      </div>
       <p class="muted">{{ prop.address }}, {{ prop.city.postal_code }} {{ prop.city.name }}</p>
     </header>
 
     {% if prop.photos %}
-      <div class="gallery">
+      {% set count = prop.photos|length %}
+      <div class="gallery gallery-{{ [count, 5]|min }}">
         {% for photo in prop.photos %}
           <figure>
-            <img src="/media/{{ photo.file_path if loop.first else photo.file_path.replace('.webp', '_thumb.webp') }}"
-                 alt="{{ photo.alt_text }}" width="{{ 1600 if loop.first else 640 }}" height="{{ 1200 if loop.first else 480 }}"
-                 {% if not loop.first %}loading="lazy"{% endif %} decoding="async">
+            <a href="/media/{{ photo.file_path }}">
+              <img src="/media/{{ photo.file_path if loop.first else photo.file_path.replace('.webp', '_thumb.webp') }}"
+                   alt="{{ photo_alt(prop, photo) }}" width="{{ 1600 if loop.first else 640 }}" height="{{ 1200 if loop.first else 480 }}"
+                   {% if not loop.first %}loading="lazy"{% endif %} decoding="async">
+              <span class="visually-hidden">(agrandir, photo {{ loop.index }} sur {{ count }})</span>
+            </a>
           </figure>
         {% endfor %}
       </div>
     {% else %}
-      <div class="detail-hero-placeholder"><div class="placeholder">{{ category_icon(prop.category) }}</div></div>
+      <div class="detail-hero-placeholder">{{ no_photo(prop) }}</div>
     {% endif %}
 
     <h2>Caractéristiques</h2>
@@ -52,10 +60,18 @@
 
   <aside class="detail-aside" aria-label="Contact et actions">
     <div class="panel">
+      <p class="eyebrow">Prix de vente</p>
       <p class="price-tag">{{ prop.price|euros }}</p>
+      <p class="price-sub">{{ prop.price_per_m2|euros }}/m² · {{ prop.surface_m2|number }} m²{% if prop.rooms %} · {{ prop.rooms }} pièce{{ 's' if prop.rooms > 1 }}{% endif %}</p>
       {% if prop.agent %}
-        <p>Votre agent : <strong>{{ prop.agent.full_name }}</strong><br>
-          <a href="mailto:{{ prop.agent.email }}">{{ prop.agent.email }}</a>{% if prop.agent.phone %}<br><a href="tel:{{ prop.agent.phone|replace(' ', '') }}">{{ prop.agent.phone }}</a>{% endif %}</p>
+        <div class="agent-card">
+          <span class="agent-initials" aria-hidden="true">{{ prop.agent.first_name[:1] }}{{ prop.agent.last_name[:1] }}</span>
+          <div>
+            <p class="muted small">Votre agent</p>
+            <p class="agent-name">{{ prop.agent.full_name }}</p>
+            <p class="agent-links"><a href="mailto:{{ prop.agent.email }}">{{ prop.agent.email }}</a>{% if prop.agent.phone %}<br><a href="tel:{{ prop.agent.phone|replace(' ', '') }}">{{ prop.agent.phone }}</a>{% endif %}</p>
+          </div>
+        </div>
       {% endif %}
 
       {% if can_manage %}

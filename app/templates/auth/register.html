@@ -1,7 +1,13 @@
 {% extends "base.html" %}
-{% from "macros.html" import field, form_errors %}
+{% from "macros.html" import field, form_errors, arches %}
 {% block title %}Créer un compte{% endblock %}
 {% block content %}
+<div class="auth-layout">
+  <aside class="auth-visual" aria-hidden="true">
+    {{ arches(3) }}
+    <blockquote>Un compte pour suivre chaque étape de votre projet immobilier.</blockquote>
+    <p>Ymmo · Réseau immobilier</p>
+  </aside>
 <div class="form-narrow">
   <h1>Créer un compte client</h1>
   <p class="muted">Enregistrez vos favoris, demandez des visites, faites des offres et suivez vos démarches.</p>
@@ -20,5 +26,6 @@
     <button class="btn btn-block" type="submit">Créer mon compte</button>
   </form>
   <p class="muted">Déjà client ? <a href="/connexion">Se connecter</a></p>
+</div>
 </div>
 {% endblock %}

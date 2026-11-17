@@ -12,14 +12,37 @@
 </svg>
 {%- endmacro %}
 
+{# Descriptive alt text: listing type and city first, then the agent's description if any. #}
+{% macro photo_alt(prop, photo) -%}
+  {{ prop.category|label }} à {{ prop.city.name }}{% if photo.alt_text %} – {{ photo.alt_text }}{% endif %}
+{%- endmacro %}
+
+{# Brand motif: a Mediterranean arcade drawn with hairlines (decorative only). #}
+{% macro arches(count=5, cls='arches') -%}
+<svg class="{{ cls }}" viewBox="0 0 1200 560" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" preserveAspectRatio="xMidYMax meet">
+  {%- set w = 1200 / count %}
+  {%- for i in range(count) %}
+    {%- set x = i * w %}{%- set r = w / 2 - 18 %}{%- set cx = x + w / 2 %}
+    <path vector-effect="non-scaling-stroke" d="M{{ cx - r }} 560V{{ 560 - 1.9 * r }}A{{ r }} {{ r }} 0 0 1 {{ cx + r }} {{ 560 - 1.9 * r }}V560"/>
+    <path vector-effect="non-scaling-stroke" opacity=".55" d="M{{ cx - r + 14 }} 560V{{ 560 - 1.9 * r }}A{{ r - 14 }} {{ r - 14 }} 0 0 1 {{ cx + r - 14 }} {{ 560 - 1.9 * r }}V560"/>
+  {%- endfor %}
+  <path vector-effect="non-scaling-stroke" opacity=".4" d="M0 {{ 560 - 1.9 * (1200 / count / 2 - 18) - (1200 / count / 2 - 18) - 40 }}H1200"/>
+</svg>
+{%- endmacro %}
+
+{# Empty state when a listing has no photo yet: warm light, arcade drawing, type in small caps. #}
+{% macro no_photo(prop) -%}
+  <div class="placeholder" aria-hidden="true">{{ arches(3) }}<span>{{ prop.category|label }}</span></div>
+{%- endmacro %}
+
 {% macro media(prop, size='thumb', eager=False) -%}
   {% set photo = prop.cover_photo %}
   {% if photo %}
     <img src="/media/{{ photo.file_path.replace('.webp', '_thumb.webp') if size == 'thumb' else photo.file_path }}"
-         alt="{{ photo.alt_text }}" width="640" height="480"
+         alt="{{ photo_alt(prop, photo) }}" width="640" height="480"
          {% if not eager %}loading="lazy"{% endif %} decoding="async">
   {% else %}
-    <div class="placeholder">{{ category_icon(prop.category) }}</div>
+    {{ no_photo(prop) }}
   {% endif %}
 {%- endmacro %}
 
@@ -44,12 +67,11 @@
     <p class="card-price">{{ prop.price|euros }}</p>
     <{{ heading }} class="card-title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title }}</a></{{ heading }}>
     <ul class="card-facts">
-      <li>{{ prop.category|label }}</li>
       <li>{{ prop.surface_m2|number }} m²</li>
       {% if prop.rooms %}<li>{{ prop.rooms }} pièce{{ 's' if prop.rooms > 1 }}</li>{% endif %}
       <li>{{ prop.price_per_m2|euros }}/m²</li>
     </ul>
-    <p class="muted small card-city">{{ prop.city.name }} ({{ prop.city.postal_code }})</p>
+    <p class="card-city"><span>{{ prop.category|label }}</span><span>{{ prop.city.name }} ({{ prop.city.postal_code }})</span></p>
   </div>
 </article>
 {%- endmacro %}

@@ -11,12 +11,62 @@
       const open = toggle.getAttribute("aria-expanded") === "true";
       toggle.setAttribute("aria-expanded", String(!open));
       nav.dataset.open = String(!open);
+      header?.classList.toggle("is-open", !open);
     });
+  }
+
+  // Header: transparent over the home hero, solid once the page scrolls.
+  const header = document.querySelector("[data-header]");
+  if (header) {
+    const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  // Gentle reveal on scroll; skipped entirely when the user prefers reduced motion.
+  const revealables = document.querySelectorAll("[data-reveal]");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (revealables.length && "IntersectionObserver" in window && !reduceMotion) {
+    document.documentElement.classList.add("js-reveal");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    revealables.forEach((el) => observer.observe(el));
   }
 
   // Search filters start collapsed on small screens (results first).
   if (window.matchMedia("(max-width: 59.99rem)").matches) {
     document.querySelectorAll("details[data-collapse-mobile]").forEach((d) => d.removeAttribute("open"));
+  }
+
+  // Tables that scroll sideways become keyboard-focusable regions named after their caption.
+  const wraps = document.querySelectorAll(".table-wrap");
+  const syncScrollable = () => wraps.forEach((wrap) => {
+    if (wrap.scrollWidth > wrap.clientWidth + 1) {
+      wrap.tabIndex = 0;
+      wrap.setAttribute("role", "region");
+      const caption = wrap.querySelector("caption");
+      wrap.setAttribute("aria-label", caption ? caption.textContent.trim() : "Tableau défilant");
+    } else {
+      wrap.removeAttribute("tabindex");
+      wrap.removeAttribute("role");
+      wrap.removeAttribute("aria-label");
+    }
+  });
+  if (wraps.length) {
+    syncScrollable();
+    // Also when a <details> opens (hidden tables have no width until then).
+    document.querySelectorAll("details").forEach((d) => d.addEventListener("toggle", syncScrollable));
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(syncScrollable, 150);
+    });
   }
 
   // Confirmation before destructive actions.

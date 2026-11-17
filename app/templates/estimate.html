@@ -2,8 +2,11 @@
 {% from "macros.html" import field, select, form_errors %}
 {% block title %}Estimer et vendre mon bien{% endblock %}
 {% block content %}
-<h1>Estimer et vendre mon bien</h1>
-<p class="muted">Obtenez une estimation indicative immédiate, calculée à partir des ventes comparables. Envoyez ensuite votre demande : l'agence Ymmo la plus proche vous recontacte pour une estimation sur place.</p>
+<header class="page-head">
+  <p class="eyebrow">Vendre</p>
+  <h1>Estimer et vendre mon bien</h1>
+  <p class="lead">Obtenez une estimation indicative immédiate, calculée à partir des ventes comparables. Envoyez ensuite votre demande : l'agence Ymmo la plus proche vous recontacte pour une estimation sur place.</p>
+</header>
 
 {{ form_errors(errors) }}
 <div class="detail-layout">

@@ -4,23 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block description %}Ymmo, réseau immobilier : achat et vente de biens résidentiels et professionnels, 12 agences en France.{% endblock %}">
-  <meta name="theme-color" content="#1d4e5f">
+  <meta name="theme-color" content="#f6f2eb">
   <title>{% block title %}Ymmo{% endblock %} · Ymmo immobilier</title>
   <link rel="icon" href="{{ url_for('static', path='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="preload" href="{{ url_for('static', path='fonts/newsreader-latin-opsz-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', path='fonts/public-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
   <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">Aller au contenu principal</a>
 
   {% set path = request.url.path %}
-  <header class="site-header">
+  <header class="site-header" data-header>
     <div class="container">
       <a class="brand" href="/" aria-label="Ymmo, accueil">
-        <span class="brand-mark">Ymmo</span><span class="brand-tag">Réseau immobilier</span>
+        <span class="brand-mark">Ymmo</span><span class="brand-tag">Immobilier · depuis Aix-en-Provence</span>
       </a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h18M3 16h18"/></svg>
         Menu
       </button>
       <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
@@ -62,19 +64,39 @@
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-grid">
-      <div>
-        <p><span class="brand-mark brand-mark-light">Ymmo</span></p>
-        <p>Groupe immobilier · siège à Aix-en-Provence · 12 agences en France.<br>Achat et vente de biens résidentiels et professionnels.</p>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="brand-mark brand-mark-light">Ymmo</span>
+          <p class="footer-lead">L'immobilier résidentiel et professionnel, accompagné par des agents qui connaissent chaque rue.</p>
+        </div>
+        <nav aria-labelledby="footer-explore">
+          <h2 id="footer-explore">Explorer</h2>
+          <ul>
+            <li><a href="/biens">Biens à vendre</a></li>
+            <li><a href="/estimer">Estimer mon bien</a></li>
+            <li><a href="/biens?sort=price_desc">Biens d'exception</a></li>
+          </ul>
+        </nav>
+        <nav aria-labelledby="footer-account">
+          <h2 id="footer-account">Espace</h2>
+          <ul>
+            {% if user %}
+              <li><a href="{{ '/back-office' if user.is_staff else '/mon-espace' }}">Mon espace</a></li>
+            {% else %}
+              <li><a href="/connexion">Se connecter</a></li>
+              <li><a href="/inscription">Créer un compte</a></li>
+            {% endif %}
+            <li><a href="/api/docs">API (documentation)</a></li>
+          </ul>
+        </nav>
+        <div>
+          <h2>Siège</h2>
+          <p>Aix-en-Provence<br>Agences dans toute la France</p>
+        </div>
       </div>
-      <nav aria-label="Liens utiles">
-        <ul>
-          <li><a href="/biens">Biens à vendre</a></li>
-          <li><a href="/estimer">Estimer mon bien</a></li>
-          <li><a href="/api/docs">API (documentation)</a></li>
-        </ul>
-      </nav>
-      <div>
+      <div class="footer-bottom">
+        <p>© 2026 Ymmo · Réseau immobilier</p>
         <p>Projet fil rouge B2 · Ynov Informatique</p>
       </div>
     </div>
