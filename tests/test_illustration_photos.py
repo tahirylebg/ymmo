@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.models import PropertyPhoto
 from app.services.image_service import ImageStorage
 from scripts.illustration_photos import ALT_PREFIX, STOCK_DIR, add, remove
+from tests.factories import make_property
 
 
 def test_stock_photos_are_documented_and_free():
@@ -33,5 +34,10 @@ def test_add_illustrates_listings_without_photo_then_remove(db, world, tmp_path)
         assert (tmp_path / photo.file_path.replace(".webp", "_thumb.webp")).is_file()
 
     assert add(db, storage=storage) == 0  # listings with photos are left alone
-    assert remove(db, storage=storage) == 3
+    # Runs once: a listing created afterwards by staff keeps waiting for its real photos.
+    make_property(db, world["aix_agency"], world["agent"])
+    db.commit()
+    assert add(db, storage=storage) == 0
+    assert add(db, gallery_every=0, storage=storage, force=True) == 1
+    assert remove(db, storage=storage) == 4
     assert not list(tmp_path.rglob("*.webp"))

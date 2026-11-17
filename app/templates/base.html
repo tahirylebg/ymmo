@@ -24,7 +24,9 @@
   <link rel="preload" href="{{ url_for('static', path='fonts/public-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}?v={{ ASSET_VERSION }}">
   <script src="{{ url_for('static', path='js/app.js') }}?v={{ ASSET_VERSION }}" defer></script>
-  {# Listing pages load ahead: a detail page is prerendered on hover, result pages prefetched.
+  {# Listing pages load ahead: a detail page is prerendered as soon as the pointer/finger goes
+     down (conservative: a detail GET records a view, so hover-only prerenders would inflate the
+     back-office view counts); result pages are prefetched on hover.
      Read-only GET pages only: never the logout, the back-office or anything that writes. #}
   <script type="speculationrules">
   {
@@ -33,7 +35,7 @@
         {"href_matches": {"pathname": "/biens/:id([0-9]+)"}},
         {"not": {"selector_matches": "[data-no-prefetch]"}}
       ]},
-      "eagerness": "moderate"
+      "eagerness": "conservative"
     }],
     "prefetch": [{
       "where": {"and": [

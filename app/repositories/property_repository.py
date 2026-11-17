@@ -7,6 +7,7 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.models import Agency, City, Property, PropertyPhoto, PropertyView
+from app.models.enums import PropertyStatus
 from app.repositories.base import BaseRepository, Page
 from app.schemas.property import PropertyFilters, SortOption
 
@@ -72,6 +73,16 @@ class PropertyRepository(BaseRepository[Property]):
 
         stmt = stmt.order_by(*_SORTS[filters.sort])
         return self.paginate(stmt, page=filters.page, size=filters.size)
+
+    def most_expensive_available(self) -> Property | None:
+        """Home page lead listing (single row, no count query)."""
+        stmt = (
+            self._base_query()
+            .where(Property.status == PropertyStatus.AVAILABLE)
+            .order_by(Property.price.desc(), Property.id)
+            .limit(1)
+        )
+        return self.db.scalar(stmt)
 
     def scoped(
         self, *, agent_id: int | None = None, agency_id: int | None = None

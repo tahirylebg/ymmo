@@ -23,7 +23,7 @@ Viewer = Depends(get_optional_user)
 
 
 _MEDIAN_TTL = 300  # seconds: the figure only moves when a sale is signed
-_median_cache: tuple[float, int | None] = (0.0, None)
+_median_cache: tuple[float, int | None] = (float("-inf"), None)
 
 
 def _median_days(db: Session) -> int | None:
@@ -45,8 +45,9 @@ def home(request: Request, db: Session = Depends(get_db), user: User | None = Vi
     service = PropertyService(db)
     latest = service.search(PropertyFilters(size=6))
     # The large first card shows the most prestigious listing, then the newest ones.
-    featured = service.search(PropertyFilters(size=1, sort=SortOption.PRICE_DESC)).items
-    selection = featured + [p for p in latest.items if p not in featured][: 6 - len(featured)]
+    top = service.properties.most_expensive_available()
+    featured = [top] if top else []
+    selection = featured + [p for p in latest.items if p is not top][: 6 - len(featured)]
     return render(
         request,
         "index.html",

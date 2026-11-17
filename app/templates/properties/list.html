@@ -62,9 +62,13 @@
             <label class="pill" for="f-rooms-any">Tous</label>
             {% for n in range(1, 6) %}
             <input class="pill-input" type="radio" id="f-rooms-{{ n }}" name="min_rooms" value="{{ n }}"
-                   {% if rooms_min == n or (n == 5 and rooms_min > 5) %}checked{% endif %}>
+                   {% if rooms_min == n %}checked{% endif %}>
             <label class="pill" for="f-rooms-{{ n }}">{{ n }}{% if n == 5 %}<span aria-hidden="true">+</span><span class="visually-hidden"> ou plus</span>{% endif %}</label>
             {% endfor %}
+            {% if rooms_min > 5 %}{# value from a link or bookmark: kept as is, never widened to 5 #}
+            <input class="pill-input" type="radio" id="f-rooms-more" name="min_rooms" value="{{ rooms_min }}" checked>
+            <label class="pill" for="f-rooms-more">{{ rooms_min }}<span aria-hidden="true">+</span><span class="visually-hidden"> ou plus</span></label>
+            {% endif %}
           </div>
         </fieldset>
         <input type="hidden" name="sort" value="{{ filters.sort.value }}">

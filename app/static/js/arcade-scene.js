@@ -106,6 +106,9 @@ ${ao ? "reflectedLight.directSpecular *= ao; reflectedLight.indirectSpecular *= 
       .replace("#include <fog_fragment>", `#include <fog_fragment>
 if (uFade.y > 0.0) gl_FragColor.a *= 1.0 - smoothstep(uFade.x, uFade.y, distance(vWPos, cameraPosition));`);
   };
+  // Three caches programs by onBeforeCompile's source, identical for every stone: without its own
+  // key, each occlusion variant would reuse whichever program compiled first.
+  material.customProgramCacheKey = () => `stone-${ao || "none"}`;
   return material;
 }
 
@@ -316,6 +319,7 @@ export async function createArcade(canvas, { colors: palette, dpr, view: initial
         .replace("#include <common>", "#include <common>\nvarying vec2 vLightUv;")
         .replace("#include <color_fragment>", `#include <color_fragment>\n${alpha}`);
     };
+    material.customProgramCacheKey = () => `glow-${alpha}`;
     disposables.push(material);
     return material;
   };

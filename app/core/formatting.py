@@ -98,8 +98,9 @@ _TYPO_RULES = (
     (re.compile(r"(?<=\w) - (?=\w)"), " – "),  # spaced hyphen -> en dash
     (re.compile(r"(?<=\w)'(?=\w)"), "’"),  # typographic apostrophe
     # narrow no-break space before ; : ? ! » (only as punctuation: never inside 10:30 or URLs)
-    (re.compile(r"(?<=[\w)%€]) *([;:?!»])(?=\s|$)"), NBSP + r"\g<1>"),
-    (re.compile(r"« *"), "«" + NBSP),
+    # (spaces already typed as no-break are replaced, never doubled)
+    (re.compile(r"(?<=[\w)%€»])[   ]*([;:?!»])(?=\s|$)"), NBSP + r"\g<1>"),
+    (re.compile(r"«[   ]*"), "«" + NBSP),
     # "1 pièces" -> "1 pièce"
     (re.compile(r"(?<!\d)1" + NBSP_WORD + r"(pièce|chambre)s\b"), "1" + NBSP_WORD + r"\g<1>"),
 )

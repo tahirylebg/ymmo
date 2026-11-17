@@ -46,3 +46,8 @@ def test_short_title_drops_category_and_city(title, category, city, expected):
     assert short_title(title, category, city) == expected.replace(" m²", f"{NBSP_WORD}m²").replace(
         "3 pièces", f"3{NBSP_WORD}pièces"
     )
+
+
+def test_typo_keeps_a_single_space_when_no_break_spaces_were_already_typed():
+    raw = "« Coup de cœur » : prix !"
+    assert typo(raw) == f"«{NBSP}Coup de cœur{NBSP}»{NBSP}: prix{NBSP}!"

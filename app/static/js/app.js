@@ -101,9 +101,14 @@
 
   // Search filters are served collapsed (results first on phones, no layout shift); the wide
   // layout shows them in a side column, so opening them there moves nothing.
-  if (window.matchMedia("(min-width: 64rem)").matches) {
-    document.querySelectorAll("details[data-open-wide]").forEach((d) => { d.open = true; });
-  }
+  // Kept in sync on resize/rotation: the summary is hidden on wide screens, so closed filters
+  // would otherwise be unreachable there.
+  const wide = window.matchMedia("(min-width: 64rem)");
+  const openWide = () => {
+    if (wide.matches) document.querySelectorAll("details[data-open-wide]").forEach((d) => { d.open = true; });
+  };
+  openWide();
+  wide.addEventListener("change", openWide);
 
   // Tables that scroll sideways become keyboard-focusable regions named after their caption.
   const wraps = document.querySelectorAll(".table-wrap");
