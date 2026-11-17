@@ -731,6 +731,103 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .band h2 { color: var(--c-on-dark); font-size: clamp(2.25rem, 1.5rem + 3vw, 4rem); font-weight: 300; margin: 0; max-width: 16ch; }
 .band p { color: var(--c-on-dark-muted); }
 
+/* "Vendre avec Ymmo": a full-screen moment, like the hero. The dark lime wall, crossed corner to
+   corner by a long beam of late sun (a still) that passes behind the panel, never behind the
+   title. At least a screen tall (never cut: min-height), its content centred in the part of the
+   screen under the opaque header. Clean edges, no fade to grey: a fine brass rule marks the top.
+   A 12-column grid: the words on 5 columns, an empty one, the form and the figures on 6. */
+.band-sell {
+  --band-pad: clamp(var(--space-6), 7svh, var(--space-9));
+  min-height: 100svh; display: flex; flex-direction: column; justify-content: center;
+  padding-block: calc(var(--header-h) + var(--band-pad)) var(--band-pad);
+  background: var(--c-dark); border-top: 1px solid color-mix(in oklab, var(--brass-500) 70%, transparent);
+}
+.band-sell::before { content: none; }
+.band-sell > .container { width: min(100% - 2 * var(--space-4), var(--max-width)); }
+@media (min-width: 48rem) { .band-sell > .container { width: min(100% - 2 * var(--space-7), var(--max-width)); } }
+/* The still is a little wider than the band, so it can slide in from the left (below) */
+.band-light { position: absolute; inset: 0 -6%; pointer-events: none; }
+.band-light img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+/* One column (the beam can't avoid the words): a little dimmer, so they keep AA contrast */
+@media (max-width: 63.99rem) { .band-light img { opacity: .72; } }
+.band-sell .container { align-items: start; gap: var(--space-7); }
+@media (min-width: 64rem) {
+  .band-sell .container { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--space-6); }
+  .band-copy { grid-column: 1 / span 5; }
+  .band-action { grid-column: 7 / span 6; }
+}
+.band-sell h2 {
+  font-size: min(clamp(2.75rem, 1.5rem + 3.6vw, 5rem), 9.5svh); line-height: 1.02; letter-spacing: -.03em;
+  max-width: 11ch; margin-bottom: clamp(var(--space-4), 3svh, var(--space-6));
+}
+.band-copy > p:not(.eyebrow) { max-width: 40ch; }
+
+/* The mini estimate and the figures: one panel drawn by a fine brass rule, the wall barely
+   showing through it (the beam passes behind; the text keeps AA contrast). */
+.band-panel {
+  padding: clamp(var(--space-5), 4svh, var(--space-7)); border: 1px solid color-mix(in oklab, var(--brass-500) 60%, transparent);
+  background: color-mix(in oklab, var(--ink-800) 90%, transparent);
+}
+.mini-estimate { display: grid; gap: var(--space-5); }
+@media (min-width: 40rem) { .mini-estimate { grid-template-columns: 1.5fr 1fr 1.2fr; gap: var(--space-5) var(--space-6); } }
+.mini-estimate .field { margin: 0; min-width: 0; }
+.mini-estimate .field label { color: var(--c-on-dark-accent); }
+.mini-estimate input, .mini-estimate select {
+  color: var(--c-on-dark); border-bottom: 1px solid color-mix(in oklab, var(--c-on-dark) 75%, transparent); padding-left: 0;
+}
+.mini-estimate select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23ede6d9' stroke-width='1.2'/%3E%3C/svg%3E");
+}
+.mini-estimate option { color: var(--c-text); background: var(--c-paper); }
+.mini-estimate input::placeholder { color: var(--c-on-dark-muted); }
+.mini-estimate input:hover, .mini-estimate select:hover { border-color: var(--c-on-dark); }
+.mini-estimate input:focus-visible, .mini-estimate select:focus-visible {
+  border-color: var(--c-on-dark); box-shadow: 0 1px 0 0 var(--c-on-dark);
+  background-color: color-mix(in oklab, var(--c-on-dark) 8%, transparent);
+  outline: 2px solid var(--c-on-dark-accent); outline-offset: 4px;
+}
+.mini-estimate .btn { grid-column: 1 / -1; justify-self: start; }
+.btn-arrow { display: inline-block; margin-left: var(--space-2); transition: transform var(--dur) var(--ease); }
+.btn:hover .btn-arrow, .btn:focus-visible .btn-arrow { transform: translateX(.35em); }
+
+/* Three figures in serif, small-caps labels under them (the label comes first in the markup) */
+.band-figures {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--space-5) var(--space-6);
+  margin: clamp(var(--space-5), 3svh, var(--space-6)) 0 0; padding: clamp(var(--space-5), 3svh, var(--space-6)) 0 0; border-top: 1px solid var(--c-dark-rule);
+}
+@media (min-width: 40rem) {
+  /* Three labels, each on one line */
+  .band-figures { grid-template-columns: repeat(3, auto); justify-content: space-between; }
+  .band-figures dt { white-space: nowrap; }
+}
+.band-figures div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: var(--space-2); }
+.band-figures dd {
+  margin: 0; white-space: nowrap; color: var(--c-on-dark);
+  font: 300 clamp(1.75rem, 1.4rem + 1vw, 2.25rem)/1 var(--font-serif); font-variant-numeric: lining-nums tabular-nums;
+}
+.band-figures dd small { font-size: .5em; font-weight: 400; color: var(--c-on-dark-muted); }
+.band-figures dt {
+  font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase;
+  color: var(--c-on-dark-muted);
+}
+.band .band-link { color: var(--c-on-dark); margin-top: var(--space-5); }
+.band .band-link:hover { color: var(--c-on-dark-accent); }
+
+/* As the band comes in, the beam slides softly in from the left and brightens; as it leaves, it
+   fades (a still image: transform and opacity only). Reduced motion: a still image. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .band-sell { view-timeline: --band block; }
+    .band-light { animation: beam-pass linear both; animation-timeline: --band; animation-range: cover; }
+  }
+}
+@keyframes beam-pass {
+  entry 0% { transform: translateX(-5%); opacity: .25; }
+  entry 100% { transform: none; opacity: 1; }
+  exit 0% { opacity: 1; }
+  exit 100% { opacity: .3; }
+}
+
 /* Agencies: map of France + list, hovering one lights the other (main.js) */
 .agencies { display: grid; gap: var(--space-7); align-items: center; }
 @media (min-width: 64rem) { .agencies { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-9); } }

@@ -47,7 +47,8 @@ def test_home_hero_keeps_poster_fallback_and_points_to_versioned_light_module(cl
     # The poster stays in the markup: it is what users see without JS or WebGL. One framing per
     # shape of screen, each in AVIF and WebP.
     assert 'class="hero-poster"' in html
-    for name in ("light-1920", "light-1200", "light-960"):
+    # The sell band's still beam ships the same way.
+    for name in ("light-1920", "light-1200", "light-960", "beam-1920", "beam-900"):
         for ext in ("avif", "webp"):
             assert f"/static/img/hero/{name}.{ext}?v={version}" in html
             assert client.get(f"/static/img/hero/{name}.{ext}?v={version}").status_code == 200

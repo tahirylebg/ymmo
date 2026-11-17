@@ -1,4 +1,4 @@
-"""Home page content: featured listing, market figures, estimate prefill, agencies map."""
+"""Home page content: featured listing, market figures, sell band, agencies map."""
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -36,6 +36,14 @@ def test_median_days_to_sell(db, world):
     assert repo.market_summary() == {"sales": 3, "median_days": 60, "median_price_m2": 14}
     # Sales older than the window are not counted.
     assert repo.market_summary(window_days=10)["sales"] == 0
+
+
+def test_sell_band_mini_form_sends_its_fields_to_the_estimate_page(client, world):
+    html = client.get("/").text
+    band = html.split('aria-labelledby="sell-title"')[1].split("</section>")[0]
+    assert 'action="/estimer"' in band and 'method="get"' in band
+    for name in ("city_id", "surface_m2", "category"):
+        assert f'name="{name}"' in band
 
 
 def test_estimate_page_is_prefilled_from_the_home_mini_form(client, world):

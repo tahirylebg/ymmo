@@ -128,15 +128,53 @@
   </div>
 </section>
 
-<section class="band" aria-labelledby="sell-title">
+<section class="band band-sell" aria-labelledby="sell-title">
+  {# Decorative: the same dark lime wall as the hero, crossed corner to corner by a long beam of
+     sun (a still of the hero's light, landscape or portrait: no second WebGL context). #}
+  <picture class="band-light" aria-hidden="true">
+    <source type="image/avif" media="(max-aspect-ratio: 3/4)" srcset="{{ url_for('static', path='img/hero/beam-900.avif') }}?v={{ ASSET_VERSION }}">
+    <source type="image/webp" media="(max-aspect-ratio: 3/4)" srcset="{{ url_for('static', path='img/hero/beam-900.webp') }}?v={{ ASSET_VERSION }}">
+    <source type="image/avif" srcset="{{ url_for('static', path='img/hero/beam-1920.avif') }}?v={{ ASSET_VERSION }}">
+    <img src="{{ url_for('static', path='img/hero/beam-1920.webp') }}?v={{ ASSET_VERSION }}" alt="" width="1920" height="1080" loading="lazy" decoding="async">
+  </picture>
   <div class="container">
-    <div data-reveal>
+    <div class="band-copy" data-reveal>
       <p class="eyebrow">Vendre avec Ymmo</p>
       <h2 id="sell-title">Combien vaut votre bien aujourd’hui ?</h2>
-    </div>
-    <div data-reveal data-reveal-delay="1">
       <p>Une première estimation immédiate, puis la visite d’un agent de l’agence la plus proche pour affiner le prix.</p>
-      <a class="btn btn-light" href="/estimer">Estimer mon bien</a>
+    </div>
+    <div class="band-action" data-reveal data-reveal-delay="1">
+      <div class="band-panel">
+      <form class="mini-estimate" method="get" action="/estimer" aria-label="Première estimation">
+        <div class="field">
+          <label for="be-city">Ville</label>
+          <select id="be-city" name="city_id">
+            <option value="">Choisir une ville</option>
+            {% for city in cities %}<option value="{{ city.id }}">{{ city.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="be-surface">Surface (m²)</label>
+          <input id="be-surface" name="surface_m2" type="number" min="1" step="0.5" inputmode="decimal" placeholder="85">
+        </div>
+        <div class="field">
+          <label for="be-category">Type de bien</label>
+          <select id="be-category" name="category">
+            {% for c in categories %}<option value="{{ c.value }}">{{ c|label }}</option>{% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-light" type="submit">Estimer mon bien <span class="btn-arrow" aria-hidden="true">→</span></button>
+      </form>
+      {% if market.sales %}
+      {# Real figures of the network (last 12 months of signed sales) #}
+      <dl class="band-figures">
+        <div><dt>Ventes sur 12&nbsp;mois</dt><dd>{{ market.sales|number }}</dd></div>
+        {% if market.median_price_m2 %}<div><dt>Prix médian au&nbsp;m²</dt><dd>{{ market.median_price_m2|number }}&nbsp;<small>€/m²</small></dd></div>{% endif %}
+        {% if market.median_days %}<div><dt>Délai de vente médian</dt><dd>{{ market.median_days }}&nbsp;<small>jours</small></dd></div>{% endif %}
+      </dl>
+      {% endif %}
+      <a class="link-arrow band-link" href="/estimer">ou faire une estimation détaillée</a>
+      </div>
     </div>
   </div>
 </section>
