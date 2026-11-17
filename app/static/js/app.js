@@ -125,18 +125,51 @@
   const output = document.getElementById("estimate-result");
   if (form && button && output) {
     button.hidden = false;
+    const empty = document.querySelector("[data-estimate-empty]");
+    if (empty) empty.hidden = false;
     const formatter = new Intl.NumberFormat("fr-FR", {
       style: "currency", currency: "EUR", maximumFractionDigits: 0,
     });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let shown = 0;
+    let frame = 0;
+    const note = (text) => {
+      cancelAnimationFrame(frame);
+      output.classList.add("is-note");
+      output.textContent = text;
+    };
+    // The amount counts up in 600 ms; screen readers only get the final value.
+    const showAmount = (amount) => {
+      cancelAnimationFrame(frame);
+      if (empty) empty.hidden = true;
+      output.classList.remove("is-note");
+      output.innerHTML = '<span aria-hidden="true"></span><span class="visually-hidden"></span>';
+      const [visual, spoken] = output.children;
+      spoken.textContent = formatter.format(amount);
+      const from = shown;
+      shown = amount;
+      if (reduceMotion.matches) {
+        visual.textContent = formatter.format(amount);
+        return;
+      }
+      const start = performance.now();
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / 600);
+        const eased = 1 - (1 - t) ** 4;
+        visual.textContent = formatter.format(Math.round(from + (amount - from) * eased));
+        if (t < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+    };
     button.addEventListener("click", async () => {
       const data = Object.fromEntries(
         [...new FormData(form).entries()].filter(([, value]) => value !== "")
       );
       if (!data.surface_m2 || !data.city_id || !data.address) {
-        output.textContent = "Renseignez au moins la surface, l'adresse et la ville.";
+        note("Renseignez au moins la surface, l’adresse et la ville.");
         return;
       }
-      output.textContent = "Calcul en cours…";
+      note("Calcul en cours…");
       try {
         const response = await fetch("/api/estimations/preview", {
           method: "POST",
@@ -145,14 +178,14 @@
         });
         const body = await response.json();
         if (!response.ok) {
-          output.textContent = "Vérifiez les informations saisies.";
+          note("Vérifiez les informations saisies.");
         } else if (body.estimated_price === null) {
-          output.textContent = "Pas assez de ventes comparables pour estimer ce bien.";
+          note("Pas assez de ventes comparables pour estimer ce bien.");
         } else {
-          output.textContent = formatter.format(Number(body.estimated_price));
+          showAmount(Number(body.estimated_price));
         }
       } catch {
-        output.textContent = "Estimation indisponible pour le moment.";
+        note("Estimation indisponible pour le moment.");
       }
     });
   }

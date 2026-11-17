@@ -178,6 +178,10 @@ def test_ml_estimator_and_fallback(model):
     no_model = MLPriceEstimator(fallback)
     no_model.model = None
     assert no_model.estimate(features) == Decimal("1")
+    # A home without room count goes to the market average instead of the model.
+    apartment = (PropertyType.RESIDENTIAL, PropertyCategory.APARTMENT)
+    unknown_rooms = PropertyFeatures(*apartment, 50, 0, city)
+    assert MLPriceEstimator(fallback, model=model).estimate(unknown_rooms) == Decimal("1")
 
 
 # --- Forecast ------------------------------------------------------------------------------

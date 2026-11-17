@@ -39,6 +39,7 @@
           <div class="range">
             <label class="visually-hidden" for="f-min-price">Prix minimum</label>
             <input id="f-min-price" name="min_price" type="number" min="0" step="10000" placeholder="Min" value="{{ filters.min_price or '' }}">
+            <span class="range-sep" aria-hidden="true">à</span>
             <label class="visually-hidden" for="f-max-price">Prix maximum</label>
             <input id="f-max-price" name="max_price" type="number" min="0" step="10000" placeholder="Max" value="{{ filters.max_price or '' }}">
           </div>
@@ -48,14 +49,24 @@
           <div class="range">
             <label class="visually-hidden" for="f-min-surface">Surface minimum</label>
             <input id="f-min-surface" name="min_surface" type="number" min="0" placeholder="Min" value="{{ filters.min_surface or '' }}">
+            <span class="range-sep" aria-hidden="true">à</span>
             <label class="visually-hidden" for="f-max-surface">Surface maximum</label>
             <input id="f-max-surface" name="max_surface" type="number" min="0" placeholder="Max" value="{{ filters.max_surface or '' }}">
           </div>
         </fieldset>
-        <div class="field">
-          <label for="f-rooms">Pièces minimum</label>
-          <input id="f-rooms" name="min_rooms" type="number" min="0" max="20" value="{{ filters.min_rooms if filters.min_rooms is not none else '' }}">
-        </div>
+        <fieldset class="field">
+          <legend>Pièces minimum</legend>
+          {% set rooms_min = filters.min_rooms or 0 %}
+          <div class="pills">
+            <input class="pill-input" type="radio" id="f-rooms-any" name="min_rooms" value="" {% if not rooms_min %}checked{% endif %}>
+            <label class="pill" for="f-rooms-any">Tous</label>
+            {% for n in range(1, 6) %}
+            <input class="pill-input" type="radio" id="f-rooms-{{ n }}" name="min_rooms" value="{{ n }}"
+                   {% if rooms_min == n or (n == 5 and rooms_min > 5) %}checked{% endif %}>
+            <label class="pill" for="f-rooms-{{ n }}">{{ n }}{% if n == 5 %}<span aria-hidden="true">+</span><span class="visually-hidden"> ou plus</span>{% endif %}</label>
+            {% endfor %}
+          </div>
+        </fieldset>
         <input type="hidden" name="sort" value="{{ filters.sort.value }}">
         <div class="btn-row">
           <button class="btn" type="submit">Appliquer</button>
