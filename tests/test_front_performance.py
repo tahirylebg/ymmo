@@ -1,4 +1,4 @@
-"""Front-end delivery: HTTP caching, compression, SEO metadata and the hero arcade assets."""
+"""Front-end delivery: HTTP caching, compression, SEO metadata, the hero light and the brand arcade."""
 
 import json
 import re
@@ -38,24 +38,30 @@ def test_fonts_are_immutable_and_not_gzipped(client):
     assert "content-encoding" not in response.headers
 
 
-def test_home_hero_keeps_svg_fallback_and_points_to_versioned_3d_module(client, world):
+def test_home_hero_keeps_poster_fallback_and_points_to_versioned_light_module(client, world):
     html = client.get("/").text
     version = templates.env.globals["ASSET_VERSION"]
     hero = re.search(r'<section class="hero"[^>]*>', html).group(0)
-    src = re.search(r'data-arcade-src="[^"]*(/static/js/hero-arcade\.js\?v=\w+)"', hero).group(1)
+    src = re.search(r'data-light-src="[^"]*(/static/js/hero-light\.js\?v=\w+)"', hero).group(1)
     assert src.endswith(f"?v={version}")
-    # The SVG arcade stays in the markup: it is what users see without JS or WebGL.
-    assert '<svg class="arches"' in html
+    # The poster stays in the markup: it is what users see without JS or WebGL. One framing per
+    # shape of screen, each in AVIF and WebP.
+    assert 'class="hero-poster"' in html
+    for name in ("light-1920", "light-1200", "light-960"):
+        for ext in ("avif", "webp"):
+            assert f"/static/img/hero/{name}.{ext}?v={version}" in html
+            assert client.get(f"/static/img/hero/{name}.{ext}?v={version}").status_code == 200
 
     module = client.get(src)
     assert module.status_code == 200
     assert "javascript" in module.headers["content-type"]
     assert module.headers["cache-control"].endswith("immutable")
-    assert client.get(f"/static/vendor/three/three.arcade.min.js?v={version}").status_code == 200
+    # One small module, no library: it never imports anything.
+    assert not re.search(r"^\s*import\b(?!\s*\()", module.text, re.M)
 
 
-def test_other_pages_do_not_load_the_3d_module(client, world):
-    assert "hero-arcade" not in client.get("/biens").text
+def test_other_pages_do_not_load_the_light_module(client, world):
+    assert "hero-light" not in client.get("/biens").text
 
 
 @pytest.mark.parametrize("count", [1, 2, 3, 5, 9])

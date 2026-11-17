@@ -5,9 +5,37 @@
 {% block body_class %}page-home{% endblock %}
 
 {% block hero %}
+{# The wall: late sun through an arched window on a dark lime wall. With scroll-driven animations it
+   is a stage in front of the page that stays put (sticky) while the words, the figures and the
+   search bar scroll over it; the ivory page is behind it, seen through an arched opening in the
+   wall that rises, then grows until it fills the screen ("we pass under the arch", main.css).
+   The poster (a still of the light, framed for the shape of the screen) is all there is without
+   JS or WebGL, or with reduced motion; the live canvas of hero-light.js takes over from it. #}
+<div class="hero-backdrop" aria-hidden="true">
+  <div class="wall-mover">
+    <div class="wall-mask">
+      <div class="wall-art">
+        <picture class="hero-poster">
+          <source type="image/avif" media="(max-aspect-ratio: 3/5)" srcset="{{ url_for('static', path='img/hero/light-960.avif') }}?v={{ ASSET_VERSION }}">
+          <source type="image/webp" media="(max-aspect-ratio: 3/5)" srcset="{{ url_for('static', path='img/hero/light-960.webp') }}?v={{ ASSET_VERSION }}">
+          <source type="image/avif" media="(max-aspect-ratio: 6/5)" srcset="{{ url_for('static', path='img/hero/light-1200.avif') }}?v={{ ASSET_VERSION }}">
+          <source type="image/webp" media="(max-aspect-ratio: 6/5)" srcset="{{ url_for('static', path='img/hero/light-1200.webp') }}?v={{ ASSET_VERSION }}">
+          <source type="image/avif" srcset="{{ url_for('static', path='img/hero/light-1920.avif') }}?v={{ ASSET_VERSION }}">
+          <img src="{{ url_for('static', path='img/hero/light-1920.webp') }}?v={{ ASSET_VERSION }}" alt="" width="1920" height="1080" decoding="async" fetchpriority="low">
+        </picture>
+        <div class="hero-dusk"></div>
+      </div>
+    </div>
+    {# The opening's edge: daylight spilling on the wall, the depth of the reveal, a brass rule #}
+    <div class="arch-glow"></div>
+    <div class="arch-edge">
+      <svg class="arch-head" viewBox="0 0 200 100" focusable="false"><path d="M.5 100A99.5 99.5 0 0 1 199.5 100" vector-effect="non-scaling-stroke"/></svg>
+      <svg class="arch-jambs" viewBox="0 0 200 100" preserveAspectRatio="none" focusable="false"><path d="M.5 0V100M199.5 0V100" vector-effect="non-scaling-stroke"/></svg>
+    </div>
+  </div>
+</div>
 <section class="hero" aria-labelledby="hero-title"
-         data-arcade-src="{{ url_for('static', path='js/hero-arcade.js') }}?v={{ ASSET_VERSION }}">
-  {{ arches(5) }}
+         data-light-src="{{ url_for('static', path='js/hero-light.js') }}?v={{ ASSET_VERSION }}">
   <div class="container">
     <p class="eyebrow">Réseau immobilier · {{ agencies|length }} agences en France</p>
     <h1 id="hero-title">Des lieux qui vous <em>ressemblent</em>, partout en France</h1>
@@ -49,14 +77,15 @@
     </form>
   </div>
 </section>
-<div class="hero-spacer" aria-hidden="true"></div>
 {% endblock %}
 
 {% block content %}
-<section class="lux-section" aria-labelledby="latest-title">
+<section class="lux-section lux-threshold" aria-labelledby="latest-title">
+  {# Seen through the arch: only the eyebrow, centred; the title and the listings come once the
+     opening fills the screen. #}
+  <div class="arch-threshold"><p class="eyebrow">À la une, puis les nouveautés</p></div>
   <div class="lux-head" data-reveal>
     <div>
-      <p class="eyebrow">À la une, puis les nouveautés</p>
       <h2 id="latest-title">Notre sélection</h2>
     </div>
     <a class="link-arrow" href="/biens">Voir tous les biens</a>

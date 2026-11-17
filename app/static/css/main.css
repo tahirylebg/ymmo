@@ -57,6 +57,7 @@
   --brass-500: #a38253;   /* decorative accent (rules, numerals, large text) */
   --brass-700: #7b5e36;   /* accent text on light, 5.5:1 */
   --brass-100: #f1e9d9;
+  --sun-amber: #d9a05b;   /* the heart of the hero's sunlight (hero-light.js), never text */
 
   --on-dark: #ede6d9;          /* text on ink-900, 14.6:1 */
   --on-dark-muted: #a89f90;    /* secondary text on ink-900, 6.9:1 */
@@ -309,6 +310,30 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 .page-home .site-header.is-scrolled, .page-home .site-header.is-open {
   background: var(--c-dark); border-color: var(--c-dark-rule);
 }
+/* Scroll-driven version (no JS handler): an ink layer under the bar turns opaque over the first
+   8rem (before the title slides under it), the bar shrinks over the first 4rem (desktop). app.js keeps the class
+   toggle only for browsers without scroll timelines, and with reduced motion. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .page-home .site-header { isolation: isolate; }
+    .page-home .site-header::before {
+      content: ""; position: absolute; inset: 0; z-index: -1; background: var(--c-dark); opacity: 0;
+      animation: header-solid linear both; animation-timeline: scroll(root); animation-range: 0 min(15svh, 8rem);
+    }
+    .page-home .site-header.is-open::before { animation: none; opacity: 1; }
+  }
+  @media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+    .site-header:not(.is-open), .site-header:not(.is-open) .container > * {
+      animation: header-shrink linear both; animation-timeline: scroll(root); animation-range: 0 4rem;
+    }
+    .site-header:not(.is-open) .container > * { animation-name: header-shrink-content; }
+    .site-header:not(.is-open) .brand { animation-name: header-shrink-brand; transform-origin: left center; }
+  }
+}
+@keyframes header-solid { to { opacity: 1; } }
+@keyframes header-shrink { to { transform: translateY(-1rem); } }
+@keyframes header-shrink-content { to { transform: translateY(.5rem); } }
+@keyframes header-shrink-brand { to { transform: translateY(.5rem) scale(.86); } }
 
 /* ---------- Footer ---------- */
 .site-footer { background: var(--c-dark); color: var(--c-on-dark-muted); padding-block: var(--space-9) var(--space-6); font-size: var(--fs-sm); }
@@ -444,60 +469,71 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .badge-sold, .badge-rejected, .badge-cancelled, .badge-withdrawn { background: var(--c-heading); color: var(--c-on-dark); border-color: var(--c-heading); }
 
 /* ---------- Home hero ---------- */
+/* The first screen is all dark: the wall, its light, the words, the figures and the whole search
+   bar. Below it, main is ink too, and the ivory page (main > .container) only shows where it is
+   meant to. Without scroll-driven animations, or with reduced motion, the wall simply sits at the
+   top and the page goes from dark to ivory on a clean edge with a brass rule; with them, the wall
+   is a stage in front of the page, pierced by an arch we pass through (below). */
+.page-home main { position: relative; overflow-x: clip; background: var(--c-dark); padding-bottom: 0; timeline-scope: --hero, --arch; }
+.page-home main > .container {
+  position: relative; z-index: 1; padding-bottom: var(--space-9);
+  /* The ivory page, edge to edge (border-image paints beyond the box without adding overflow) */
+  border-image: linear-gradient(var(--c-bg) 0 0) fill 0 / 0 / 0 100vmax;
+}
+.hero-backdrop {
+  position: absolute; inset: 0 0 auto; z-index: 0; height: 100lvh;
+  overflow: clip; pointer-events: none;
+}
+.wall-mover, .wall-mask, .wall-art { position: absolute; inset: 0; }
 .hero {
-  position: relative; background: var(--c-dark); color: var(--c-on-dark); overflow: hidden;
-  min-height: min(100svh, 56rem); display: flex; flex-direction: column; justify-content: flex-end;
-  padding-top: calc(var(--header-h) + var(--space-8));
+  position: relative; z-index: 3; color: var(--c-on-dark);
+  min-height: 100svh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding-top: calc(var(--header-h) + clamp(var(--space-4), 5svh, var(--space-8)));
+  padding-bottom: clamp(1.25rem, 5svh, var(--space-8));
 }
-/* Warm dusk light behind the arches */
-.hero::before {
-  content: ""; position: absolute; inset: 0;
+/* The clean dark → ivory edge (when there is no arch): a fine brass rule, edge to edge */
+.hero::after {
+  content: ""; position: absolute; inset: auto 0 0; height: 1px;
+  background: color-mix(in oklab, var(--brass-500) 80%, transparent);
+}
+.hero-poster img, .hero-light {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%;
+}
+/* The light rises: the wall starts in half-light, then the sun comes out, like a cloud passing
+   (the poster fades in; under reduced motion it is simply there). */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-poster img { animation: light-rise 2.2s cubic-bezier(.2, .7, .2, 1) .15s both; }
+}
+@keyframes light-rise { from { opacity: 0; } }
+/* The live light fades in over the poster once its first frame is drawn (hero-light.js); the
+   poster then stops being painted under it. */
+.hero-light { opacity: 0; transition: opacity 1.2s var(--ease); }
+.hero-backdrop.has-light .hero-light { opacity: 1; }
+.hero-backdrop.has-light .hero-poster { visibility: hidden; transition: visibility 0s 1.2s; }
+/* Dusk: the wall darkens as the page rises over it (scroll-driven, below) */
+.hero-dusk { position: absolute; inset: 0; z-index: 2; background: var(--ink-900); opacity: 0; }
+/* Fine film grain over the poster (the live light draws its own, moving), so its soft gradients
+   never band; and a light veil under the header. The light never reaches the copy. */
+.wall-art::before, .wall-art::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.wall-art::before { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.hero-backdrop.has-light .wall-art::before { display: none; }
+.wall-art::after {
   background:
-    radial-gradient(60rem 40rem at var(--hero-glow, 78% 70%), color-mix(in srgb, var(--brass-500) 38%, transparent), transparent 70%),
-    radial-gradient(40rem 30rem at 15% 10%, color-mix(in srgb, var(--ink-800) 90%, transparent), transparent 70%);
+    linear-gradient(to top, color-mix(in oklab, var(--ink-900) 70%, transparent), transparent 14%),
+    linear-gradient(to bottom, color-mix(in oklab, var(--ink-900) 60%, transparent), transparent calc(var(--header-h) + 4rem));
 }
-.hero .arches {
-  position: absolute; right: 0; bottom: 0; width: min(58rem, 115%); height: auto;
-  color: var(--c-on-dark-accent); opacity: .55; pointer-events: none;
-  transition: opacity var(--dur-slow) var(--ease);
-}
-/* 3D arcade (hero-arcade.js). The canvas only exists with JS, which places it from the real text
-   box (--arcade-*): beside the copy on desktop, under the figures on small screens. The SVG above
-   is hidden only once the first frame is drawn. */
-.hero-arcade {
-  position: absolute; left: var(--arcade-left, 0px); top: var(--arcade-top, 0px);
-  width: calc(100% - var(--arcade-left, 0px)); height: calc(100% - var(--arcade-top, 0px));
-  pointer-events: none; opacity: 0; transition: opacity var(--dur-slow) var(--ease);
-  /* Small screens: a faint veil behind the figures (AA kept), full strength below them */
-  --arcade-mask: linear-gradient(to bottom, transparent, rgb(0 0 0 / .1) 3rem, rgb(0 0 0 / .1) var(--arcade-solid, 50%), #000 calc(var(--arcade-solid, 50%) + 3rem));
-  -webkit-mask-image: var(--arcade-mask);
-  mask-image: var(--arcade-mask);
-}
-.hero.has-arcade-3d .hero-arcade { opacity: 1; }
-.hero.has-arcade-3d .arches { opacity: 0; }
-@media (min-width: 64rem) {
-  /* Wide screens: long, eased fade from the copy into the gallery, and a fade under the header */
-  .hero-arcade {
-    --arcade-mask:
-      linear-gradient(to right, transparent 0, rgb(0 0 0 / .12) min(4rem, 8%), rgb(0 0 0 / .55) min(10rem, 20%), #000 min(20rem, 38%)),
-      linear-gradient(to bottom, transparent var(--header-h), #000 calc(var(--header-h) + 8rem));
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-  }
-}
-/* Stacked layouts: the warm glow sits lower, behind the search panel rather than the figures */
-@media (max-width: 63.99rem) { .hero { --hero-glow: 80% 96%; } }
 .hero > .container { position: relative; }
 .hero .eyebrow { color: var(--c-on-dark-accent); }
 .hero h1 {
-  font-size: var(--fs-display); font-weight: 300; line-height: 1; letter-spacing: -.035em;
-  color: var(--c-on-dark); max-width: 13ch; margin-bottom: var(--space-6);
+  font-size: min(var(--fs-display), 10.5svh); font-weight: 300; line-height: 1; letter-spacing: -.035em;
+  color: var(--c-on-dark); max-width: 13ch; margin-bottom: clamp(var(--space-4), 3svh, var(--space-6));
 }
 .hero h1 em { font-style: italic; font-weight: 300; color: var(--c-on-dark-accent); }
-.hero .lead { color: var(--c-on-dark-muted); max-width: 44ch; }
+.hero .lead { color: var(--c-on-dark-muted); max-width: 44ch; margin-bottom: 0; }
 .hero-stats {
   display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: var(--space-5) var(--space-6);
-  list-style: none; padding: 0; margin: var(--space-7) 0 0;
+  list-style: none; padding: 0; margin: clamp(var(--space-5), 4svh, var(--space-7)) 0 0;
 }
 @media (min-width: 48rem) { .hero-stats { gap: var(--space-8); } }
 .hero-stats li { display: flex; flex-direction: column; gap: var(--space-1); }
@@ -505,17 +541,20 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hero-stats strong small { font-size: .45em; font-weight: 400; color: var(--c-on-dark-muted); }
 .hero-stats span { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-on-dark-muted); }
 
-/* Search bar: one elegant line overlapping the bottom of the hero */
+/* Search bar: one elegant line at the foot of the first screen, whole. Its warm, diffuse shadow is the only
+   shadow of the site. */
 .search-panel {
-  position: relative; z-index: 2; background: var(--c-paper); color: var(--c-text);
-  padding: var(--space-5); margin-top: var(--space-8); margin-bottom: calc(-1 * var(--space-8));
+  position: relative; z-index: 5; background: var(--c-paper); color: var(--c-text);
+  padding: var(--space-5); margin-top: clamp(var(--space-5), 5svh, var(--space-8));
   border: var(--border-hair);
+  box-shadow:
+    0 1.75rem 4rem -1.5rem color-mix(in oklab, var(--brass-700) 50%, transparent),
+    0 .5rem 1.5rem -.75rem color-mix(in oklab, var(--ink-900) 45%, transparent);
 }
 .search-panel .form-grid { gap: var(--space-4); align-items: end; }
 .search-panel .field { margin-bottom: 0; }
 .search-panel .field label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--c-muted); }
 .search-panel .btn { width: 100%; min-height: 3.5rem; }
-.hero-spacer { height: var(--space-8); }
 @media (min-width: 40rem) {
   .search-panel .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .search-panel .field:first-child { grid-column: 1 / -1; }
@@ -531,6 +570,107 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .search-panel .field input:focus-visible, .search-panel .field select:focus-visible { border-bottom-color: var(--c-heading); }
   .search-panel .btn { width: auto; margin-left: var(--space-5); padding-inline: var(--space-7); }
 }
+
+/* Hero → page: "we pass under the arch". The dark wall is in front and the ivory page behind it,
+   seen through an arched opening in the wall: two upright jambs and a round head, the wall going
+   on down to the bottom of the screen on both sides. 1. While the hero's words and search bar
+   scroll, the opening rises from the bottom of the screen (narrow: 40 % of the width on desktop,
+   70 % on phones), showing only the centred eyebrow of the next section. 2. When its top nears a
+   quarter of the screen, it grows (the wall grows around the arch's centre) until the jambs leave
+   the screen on the sides and the head at the top: the screen is all ivory, the title and the
+   listings come. A brass rule stays 1 px on the opening's edge; a soft warm shadow on the ivory
+   side gives the wall its thickness; the daylight spills onto the wall around it.
+   Only transforms (translate, scale) and opacity move. The wall's layers (mover, mask, art) and
+   the threshold keep their size; the stage is pointer-events: none. */
+.arch-glow, .arch-edge { display: none; }
+@supports (animation-timeline: view()) and (timeline-scope: none) {
+  @media (prefers-reduced-motion: no-preference) {
+    .page-home main {
+      /* The two phases always add up to at least a screen: when the opening has filled it, the
+         hero has left it, so the screen is all ivory. */
+      --arch-w: 70vw; --arch-rise: 70vh; --arch-grow: 30vh;
+      --arch-r: calc(var(--arch-w) / 2);
+    }
+    @media (min-width: 48rem) { .page-home main { --arch-w: 52vw; --arch-rise: 72vh; --arch-grow: 30vh; } }
+    @media (min-width: 64rem) { .page-home main { --arch-w: 40vw; --arch-rise: 75vh; --arch-grow: 30vh; } }
+
+    /* The stage: as tall as the screen, in front of the page, until we are through */
+    .hero-backdrop {
+      position: sticky; top: 0; z-index: 2; margin-bottom: -100lvh;
+      animation: wall-out linear both; animation-timeline: --arch;
+      animation-range: cover calc(var(--arch-rise) + var(--arch-grow) - 2vh) cover calc(var(--arch-rise) + var(--arch-grow));
+    }
+    .hero::after { content: none; }
+    /* The mover holds the wall and its opening: two screens tall, the opening's top at the bottom
+       of the first. It rises with the page, then grows around the centre of the arch's head. */
+    .wall-mover {
+      inset: 0 0 auto; height: 200lvh; transform-origin: 50% calc(100lvh + var(--arch-r));
+      animation: arch-rise linear both, arch-grow linear both; animation-timeline: --arch, --arch;
+      animation-range: cover 0% cover var(--arch-rise), cover var(--arch-rise) cover calc(var(--arch-rise) + var(--arch-grow));
+    }
+    /* The wall, minus the opening: the head (a half disc) and the jambs are joined first (they
+       overlap a little, so no seam shows at the springing), then cut out of the whole box. */
+    .wall-mask {
+      mask-image:
+        linear-gradient(#000 0 0),
+        radial-gradient(circle var(--arch-r) at 50% 100%, #000 calc(100% - .75px), transparent 100%),
+        linear-gradient(#000 0 0);
+      mask-size: 100% 100%, var(--arch-w) var(--arch-r), var(--arch-w) calc(100lvh - var(--arch-r) + 4px);
+      mask-position: 0 0, 50% 100lvh, 50% calc(100lvh + var(--arch-r) - 4px);
+      mask-repeat: no-repeat;
+      mask-composite: exclude, add;
+    }
+    /* What is painted on the wall stays put while the mover rises (it only grows with it) */
+    .wall-art {
+      inset: 0 0 auto; height: 100lvh;
+      animation: arch-counter linear both; animation-timeline: --arch; animation-range: cover 0% cover var(--arch-rise);
+    }
+    /* The opening's edge, in the mover's coordinates */
+    .arch-edge, .arch-glow { display: block; position: absolute; }
+    .arch-edge {
+      left: calc(50% - var(--arch-r)); top: 100lvh; width: var(--arch-w); height: 100lvh;
+      color: color-mix(in oklab, var(--brass-500) 85%, transparent);
+      /* The reveal: a soft warm shadow on the ivory side, along the edge */
+      border-radius: var(--arch-r) var(--arch-r) 0 0 / var(--arch-r) var(--arch-r) 0 0;
+      box-shadow: inset 0 0 .75rem .125rem color-mix(in oklab, var(--brass-700) 22%, transparent);
+    }
+    .arch-edge svg { position: absolute; left: 0; width: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1; }
+    .arch-head { top: 0; height: var(--arch-r); }
+    .arch-jambs { top: var(--arch-r); height: calc(100% - var(--arch-r)); }
+    /* Daylight through the opening, spilling on the wall around it: stronger as we come closer */
+    .arch-glow {
+      left: calc(50% - var(--arch-w)); top: calc(100lvh - var(--arch-r)); width: calc(var(--arch-w) * 2); height: calc(100lvh + var(--arch-r));
+      background: radial-gradient(closest-side at 50% calc(var(--arch-r) * 2), color-mix(in oklab, var(--sun-amber) 24%, transparent), color-mix(in oklab, var(--sun-amber) 7%, transparent) 60%, transparent);
+      animation: arch-glow linear both; animation-timeline: --arch; animation-range: cover 0% cover calc(var(--arch-rise) + var(--arch-grow) * .5);
+    }
+    /* Behind the wall: the next section opens on its eyebrow alone, centred in the opening */
+    .lux-threshold { padding-top: 0; }
+    .arch-threshold {
+      view-timeline: --arch block;
+      height: calc(var(--arch-rise) + var(--arch-grow));
+      padding-top: calc(var(--arch-r) + 12vh); text-align: center;
+    }
+    /* Never wider than the opening: nothing is cut by the jambs */
+    .arch-threshold .eyebrow { display: block; margin: 0 auto; max-width: calc(var(--arch-w) - 2 * var(--space-5)); text-wrap: balance; }
+    .arch-threshold .eyebrow::before { content: none; }
+
+    /* Meanwhile the sun goes down on the wall (the live light does the same in its shader) */
+    .hero { view-timeline: --hero block; }
+    .hero-poster img {
+      animation: light-rise 2.2s cubic-bezier(.2, .7, .2, 1) .15s both, sunset linear both;
+      animation-timeline: auto, --hero; animation-range: normal, exit 0% exit 100%;
+    }
+    .hero-dusk { animation: dusk linear both; animation-timeline: --hero; animation-range: exit 20% exit 100%; }
+  }
+}
+@keyframes arch-rise { to { translate: 0 calc(-1 * var(--arch-rise)); } }
+@keyframes arch-counter { to { translate: 0 var(--arch-rise); } }
+/* Slow at first, then faster: we step through */
+@keyframes arch-grow { 0% { scale: 1; } 40% { scale: 1.3; } 70% { scale: 2.4; } 100% { scale: 6; } }
+@keyframes arch-glow { from { opacity: .3; } to { opacity: 1; } }
+@keyframes wall-out { to { opacity: 0; visibility: hidden; } }
+@keyframes sunset { to { filter: brightness(.55) sepia(.35); } }
+@keyframes dusk { to { opacity: .45; } }
 
 /* ---------- Home: editorial sections ---------- */
 .lux-section { padding-top: var(--section-gap); }

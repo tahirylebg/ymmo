@@ -49,7 +49,7 @@ def _asset_version() -> str:
     """
     static_dir = TEMPLATES_DIR.parent / "static"
     digest = hashlib.sha256()
-    for pattern in ("css/**/*.css", "js/**/*.js", "vendor/**/*.js", "img/hero/*"):
+    for pattern in ("css/**/*.css", "js/**/*.js", "img/hero/*"):
         for path in sorted(static_dir.glob(pattern)):
             digest.update(path.relative_to(static_dir).as_posix().encode())
             digest.update(path.read_bytes())

@@ -14,13 +14,26 @@
     });
   }
 
-  // Header: transparent over the home hero, solid once the page scrolls.
+  // Header: transparent over the home hero, solid once the page scrolls. Browsers with
+  // scroll-driven animations do it in CSS at the pace of the scroll; this is their fallback.
+  // Follows reduced motion live, as the CSS does.
   const header = document.querySelector("[data-header]");
+  const hasScrollTimelines = window.CSS?.supports?.("animation-timeline: scroll()");
+  const stillMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   if (header) {
     const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 24);
-    // First read on the next frame: reading scrollY during start-up would force a layout.
-    requestAnimationFrame(onScroll);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const syncHeader = () => {
+      if (hasScrollTimelines && !stillMotion.matches) {
+        window.removeEventListener("scroll", onScroll);
+        header.classList.remove("is-scrolled");
+        return;
+      }
+      // First read on the next frame: reading scrollY during start-up would force a layout.
+      requestAnimationFrame(onScroll);
+      window.addEventListener("scroll", onScroll, { passive: true });
+    };
+    syncHeader();
+    stillMotion.addEventListener?.("change", syncHeader);
   }
 
   // Lists marked data-stagger reveal their items one after the other (cycle of 6 per row band).
@@ -66,24 +79,24 @@
     revealables.forEach((el) => observer.observe(el));
   }
 
-  // Home hero: 3D arcade, fetched only after the page has loaded and gone idle, only while the
-  // hero is on screen, never with reduced motion or data saver. The SVG stays as the fallback.
-  const hero = document.querySelector(".hero[data-arcade-src]");
+  // Home hero: live light, fetched only after the page has loaded and gone idle, only while the
+  // hero is on screen, never with reduced motion or data saver. The poster stays as the fallback.
+  const hero = document.querySelector(".hero[data-light-src]");
   if (hero && !reduceMotion && !navigator.connection?.saveData
       && "IntersectionObserver" in window && "WebGLRenderingContext" in window) {
-    const loadArcade = () => {
+    const loadScene = () => {
       const observer = new IntersectionObserver((entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         observer.disconnect();
-        import(hero.dataset.arcadeSrc).then((module) => module.mount(hero)).catch(() => {});
+        import(hero.dataset.lightSrc).then((module) => module.mount(hero)).catch(() => {});
       });
       observer.observe(hero);
     };
-    // Wait for the web fonts too: the title's final paint (the LCP) must not queue behind 3D work.
+    // Wait for the web fonts too: the title's final paint (the LCP) must not queue behind WebGL work.
     const whenIdle = () => (document.fonts?.ready ?? Promise.resolve()).then(() => (
       "requestIdleCallback" in window
-        ? window.requestIdleCallback(loadArcade, { timeout: 3000 })
-        : window.setTimeout(loadArcade, 300)));
+        ? window.requestIdleCallback(loadScene, { timeout: 3000 })
+        : window.setTimeout(loadScene, 300)));
     if (document.readyState === "complete") whenIdle();
     else window.addEventListener("load", whenIdle, { once: true });
   }
