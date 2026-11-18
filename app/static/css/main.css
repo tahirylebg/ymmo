@@ -627,11 +627,11 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
    seen through an arched opening in the wall: two upright jambs and a round head, the wall going
    on down to the bottom of the screen on both sides. 1. While the hero's words and search bar
    scroll, the opening rises from the bottom of the screen (narrow: 40 % of the width on desktop,
-   70 % on phones), showing only the centred eyebrow of the next section. 2. When its top nears a
+   70 % on phones), showing only daylight on the ivory. 2. When its top nears a
    quarter of the screen, it grows (the wall grows around the arch's centre) until the jambs leave
    the screen on the sides and the head at the top: the screen is all ivory, the title and the
-   listings come. A brass rule stays 1 px on the opening's edge; a soft warm shadow on the ivory
-   side gives the wall its thickness; the daylight spills onto the wall around it.
+   listings come. A brass rule stays 1 px on the opening's edge; the daylight spills onto the wall
+   around it, and a faint warm light inside fades out as the arch opens (pure --c-bg once through).
    Only transforms (translate, scale) and opacity move. The wall's layers (mover, mask, art) and
    the threshold keep their size; the stage is pointer-events: none. */
 .arch-glow, .arch-edge { display: none; }
@@ -682,29 +682,42 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
     .arch-edge {
       left: calc(50% - var(--arch-r)); top: 100lvh; width: var(--arch-w); height: 100lvh;
       color: color-mix(in oklab, var(--brass-500) 85%, transparent);
-      /* The reveal: a soft warm shadow on the ivory side, along the edge */
       border-radius: var(--arch-r) var(--arch-r) 0 0 / var(--arch-r) var(--arch-r) 0 0;
-      box-shadow: inset 0 0 .75rem .125rem color-mix(in oklab, var(--brass-700) 22%, transparent);
+    }
+    /* The light inside: a brass tint, with a fine grain against banding, both held by one mask
+       that reaches zero well inside the edge. Around the head, down the jambs and at the base the
+       ivory seen through is exactly --c-bg; the tint fades out while the arch opens. */
+    .arch-edge::before {
+      content: ""; position: absolute; inset: 0; border-radius: inherit;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .62 0 0 0 0 .5 0 0 0 0 .33 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+        color-mix(in oklab, var(--brass-200) 40%, var(--c-bg));
+      mask-image: radial-gradient(closest-side circle at 50% var(--arch-r) in oklab,
+        #000, rgb(0 0 0 / .86) 22%, rgb(0 0 0 / .62) 42%, rgb(0 0 0 / .34) 62%, rgb(0 0 0 / .12) 80%, rgb(0 0 0 / .03) 90%, transparent 97%);
+      animation: arch-light-out linear both; animation-timeline: --arch;
+      animation-range: cover var(--arch-rise) cover calc(var(--arch-rise) + var(--arch-grow) * .6);
     }
     .arch-edge svg { position: absolute; left: 0; width: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1; }
     .arch-head { top: 0; height: var(--arch-r); }
     .arch-jambs { top: var(--arch-r); height: calc(100% - var(--arch-r)); }
-    /* Daylight through the opening, spilling on the wall around it: stronger as we come closer */
+    /* Daylight through the opening, spilling on the wall around it (never inside: the same opening
+       is cut out of it, in its own coordinates): stronger as we come closer */
     .arch-glow {
+      mask-image:
+        linear-gradient(#000 0 0),
+        radial-gradient(circle var(--arch-r) at 50% 100%, #000 calc(100% - .75px), transparent 100%),
+        linear-gradient(#000 0 0);
+      mask-size: 100% 100%, var(--arch-w) var(--arch-r), var(--arch-w) calc(100% - 2 * var(--arch-r) + 4px);
+      mask-position: 0 0, 50% var(--arch-r), 50% calc(2 * var(--arch-r) - 4px);
+      mask-repeat: no-repeat;
+      mask-composite: exclude, add;
       left: calc(50% - var(--arch-w)); top: calc(100lvh - var(--arch-r)); width: calc(var(--arch-w) * 2); height: calc(100lvh + var(--arch-r));
       background: radial-gradient(closest-side at 50% calc(var(--arch-r) * 2), color-mix(in oklab, var(--sun-amber) 24%, transparent), color-mix(in oklab, var(--sun-amber) 7%, transparent) 60%, transparent);
       animation: arch-glow linear both; animation-timeline: --arch; animation-range: cover 0% cover calc(var(--arch-rise) + var(--arch-grow) * .5);
     }
-    /* Behind the wall: the next section opens on its eyebrow alone, centred in the opening */
+    /* Behind the wall: an empty stretch of the next section, as long as the passage */
     .lux-threshold { padding-top: 0; }
-    .arch-threshold {
-      view-timeline: --arch block;
-      height: calc(var(--arch-rise) + var(--arch-grow));
-      padding-top: calc(var(--arch-r) + 12vh); text-align: center;
-    }
-    /* Never wider than the opening: nothing is cut by the jambs */
-    .arch-threshold .eyebrow { display: block; margin: 0 auto; max-width: calc(var(--arch-w) - 2 * var(--space-5)); text-wrap: balance; }
-    .arch-threshold .eyebrow::before { content: none; }
+    .arch-threshold { view-timeline: --arch block; height: calc(var(--arch-rise) + var(--arch-grow)); }
 
     /* Meanwhile the sun goes down on the wall (the live light does the same in its shader) */
     .hero { view-timeline: --hero block; }
@@ -720,6 +733,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* Slow at first, then faster: we step through */
 @keyframes arch-grow { 0% { scale: 1; } 40% { scale: 1.3; } 70% { scale: 2.4; } 100% { scale: 6; } }
 @keyframes arch-glow { from { opacity: .3; } to { opacity: 1; } }
+@keyframes arch-light-out { to { opacity: 0; } }
 @keyframes wall-out { to { opacity: 0; visibility: hidden; } }
 @keyframes sunset { to { filter: brightness(.55) sepia(.35); } }
 @keyframes dusk { to { opacity: .45; } }
