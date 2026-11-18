@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "macros.html" import ambiance_photo %}
+{% block title %}Connexion{% endblock %}
+{% block description %}Connectez-vous à votre espace Ymmo pour retrouver vos favoris, vos demandes de visite et vos offres.{% endblock %}
+{% block content %}
+<div class="auth-layout">
+  <aside class="auth-visual" aria-hidden="true" data-reveal>
+    {{ ambiance_photo('(min-width: 75rem) 36rem, 45vw') }}
+    <blockquote>Retrouvez vos favoris, vos visites et vos offres en un seul endroit.</blockquote>
+    <p>Ymmo · Réseau immobilier</p>
+  </aside>
+<div class="form-narrow" data-reveal data-reveal-delay="1">
+  <h1>Connexion</h1>
+  {% if error %}<div class="alert alert-error" role="alert" tabindex="-1" data-autofocus>{{ error }}</div>{% endif %}
+  <form method="post" action="/connexion" class="form-card" novalidate>
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="field">
+      <label for="login-email">Adresse e-mail</label>
+      <input id="login-email" name="email" type="email" autocomplete="email" required value="{{ email }}"
+             {% if error %}aria-invalid="true"{% endif %}>
+    </div>
+    <div class="field">
+      <label for="login-password">Mot de passe</label>
+      <input id="login-password" name="password" type="password" autocomplete="current-password" required
+             {% if error %}aria-invalid="true"{% endif %}>
+    </div>
+    <button class="btn btn-block" type="submit">Se connecter</button>
+  </form>
+  <p class="muted">Pas encore de compte ? <a href="/inscription">Créer un compte client</a></p>
+  <div class="alert alert-info">
+    <p><strong>Comptes de démonstration</strong> (mot de passe <code>Ymmo-Demo-2026</code>) :</p>
+    <p class="small">client@ymmo.fr · agent@ymmo.fr · manager@ymmo.fr · admin@ymmo.fr</p>
+  </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.env
+*.db
+media
+!docker/certs/*.crt
+reports
+*.pdf
+PROMPT_*.md
+.claude

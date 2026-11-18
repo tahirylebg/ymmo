@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Back-office{% endblock %}
+{% block description %}Back-office Ymmo : gestion des biens, des visites, des offres et des ventes de l’agence.{% endblock %}
+{% block content %}
+<div class="section-head">
+  <div>
+    <h1>Back-office</h1>
+    <p class="muted">{{ user.full_name }} · {{ user.role|label }} · périmètre : <strong>{{ board.scope }}</strong></p>
+  </div>
+  <div class="btn-row">
+    <a class="btn" href="/back-office/biens/nouveau">Publier un bien</a>
+    <a class="btn btn-secondary" href="/analytics">Analyses et prévisions</a>
+  </div>
+</div>
+
+<h2 class="visually-hidden">Indicateurs clés</h2>
+<ul class="kpis">
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.available }}</span><span class="kpi-label">biens disponibles</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.under_offer }}</span><span class="kpi-label">sous offre</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.upcoming_visits }}</span><span class="kpi-label">visites à venir</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.pending_offers }}</span><span class="kpi-label">offres à traiter</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.open_estimations }}</span><span class="kpi-label">demandes d’estimation</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.sales_last_12_months }}</span><span class="kpi-label">ventes sur 12 mois</span></li>
+  <li class="kpi"><span class="kpi-value">{{ (board.kpis.revenue_last_12_months / 1000000)|number(1) }} M€</span><span class="kpi-label">volume de ventes sur 12 mois</span></li>
+</ul>
+
+<nav class="dash-nav" aria-label="Sections du back-office">
+  <ul>
+    <li><a href="#visites">Visites</a></li>
+    <li><a href="#offres">Offres</a></li>
+    <li><a href="#estimations">Demandes d’estimation</a></li>
+    <li><a href="#biens">Biens</a></li>
+    <li><a href="#ventes">Ventes</a></li>
+  </ul>
+</nav>
+
+<section id="visites" class="dash-section" data-reveal="fade" aria-labelledby="visits-title">
+  <h2 id="visits-title">Visites à venir</h2>
+  {% if board.visits %}
+  <div class="table-wrap">
+    <table>
+      <caption class="visually-hidden">Visites demandées ou confirmées</caption>
+      <thead><tr><th scope="col">Date</th><th scope="col">Bien</th><th scope="col">Client</th><th scope="col">Statut</th><th scope="col">Actions</th></tr></thead>
+      <tbody>
+      {% for v in board.visits %}
+        <tr>
+          <td>{{ v.scheduled_at|datetime_fr }}</td>
+          <th scope="row"><a href="/back-office/biens/{{ v.property_id }}">{{ v.listing.reference }}</a> <span class="muted small">{{ v.listing.city.name }}</span></th>
+          <td>{{ v.client.first_name }} {{ v.client.last_name }}<br><a class="small" href="mailto:{{ v.client.email }}">{{ v.client.email }}</a></td>
+          <td><span class="badge badge-{{ v.status.value }}">{{ v.status|label }}</span></td>
+          <td class="btn-row">
+            {% if v.status.value == 'requested' %}
+            <form method="post" action="/back-office/visites/{{ v.id }}/confirmer" class="inline-form"><button class="btn btn-sm" type="submit">Confirmer<span class="visually-hidden"> la visite {{ v.id }}</span></button></form>
+            {% else %}
+            <form method="post" action="/back-office/visites/{{ v.id }}/effectuee" class="inline-form"><button class="btn btn-secondary btn-sm" type="submit">Effectuée<span class="visually-hidden"> visite {{ v.id }}</span></button></form>
+            {% endif %}
+            <form method="post" action="/back-office/visites/{{ v.id }}/annuler" class="inline-form" data-confirm="Annuler cette visite ?"><button class="btn btn-ghost btn-sm" type="submit">Annuler<span class="visually-hidden"> la visite {{ v.id }}</span></button></form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="empty">Aucune visite à venir.</p>{% endif %}
+</section>
+
+<section id="offres" class="dash-section" data-reveal="fade" aria-labelledby="offers-title">
+  <h2 id="offers-title">Offres en attente</h2>
+  {% if board.offers %}
+  <div class="table-wrap">
+    <table>
+      <caption class="visually-hidden">Offres d’achat en attente de réponse</caption>
+      <thead><tr><th scope="col">Bien</th><th scope="col">Client</th><th scope="col" class="num">Prix affiché</th><th scope="col" class="num">Offre</th><th scope="col" class="num">Écart</th><th scope="col">Actions</th></tr></thead>
+      <tbody>
+      {% for o in board.offers %}
+        <tr>
+          <th scope="row"><a href="/back-office/biens/{{ o.property_id }}">{{ o.listing.reference }}</a></th>
+          <td>{{ o.client.first_name }} {{ o.client.last_name }}</td>
+          <td class="num">{{ o.listing.price|euros }}</td>
+          <td class="num">{{ o.amount|euros }}</td>
+          <td class="num">-{{ (o.discount_rate * 100)|number(1, '%') }}</td>
+          <td class="btn-row">
+            <form method="post" action="/back-office/offres/{{ o.id }}/accepter" class="inline-form" data-confirm="Accepter cette offre ? Les autres offres en attente seront refusées."><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l’offre {{ o.id }}</span></button></form>
+            <form method="post" action="/back-office/offres/{{ o.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l’offre {{ o.id }}</span></button></form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="empty">Aucune offre en attente.</p>{% endif %}
+</section>
+
+<section id="estimations" class="dash-section" data-reveal="fade" aria-labelledby="est-title">
+  <h2 id="est-title">Demandes d’estimation (biens à rentrer)</h2>
+  {% if board.estimations %}
+  <ul class="list-cards">
+    {% for e in board.estimations %}
+      <li class="list-card">
+        <div>
+          <h3>{{ e.category|label }} de {{ e.surface_m2|number(unit='m²') }} · {{ e.address }}, {{ e.city.name }}</h3>
+          <p class="small muted">{{ e.client.first_name }} {{ e.client.last_name }} · {{ e.client.email }} · le {{ e.created_at|date_fr }}<br>
+            Estimation automatique : <strong>{{ e.estimated_price|euros }}</strong>{% if e.desired_price %} · souhait du vendeur : {{ e.desired_price|euros }}{% endif %}</p>
+          <span class="badge badge-{{ e.status.value }}">{{ e.status|label }}</span>
+        </div>
+        <div>
+          {% if e.status.value == 'submitted' %}
+            <div class="btn-row">
+              <form method="post" action="/back-office/estimations/{{ e.id }}/prendre" class="inline-form"><button class="btn btn-sm" type="submit">Prendre en charge</button></form>
+              <form method="post" action="/back-office/estimations/{{ e.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser</button></form>
+            </div>
+          {% else %}
+            <details>
+              <summary class="btn btn-secondary btn-sm">Mandat signé : publier</summary>
+              <form method="post" action="/back-office/estimations/{{ e.id }}/mandat" class="form-card">
+                <div class="field"><label for="m-title-{{ e.id }}">Titre de l’annonce</label>
+                  <input id="m-title-{{ e.id }}" name="title" required minlength="5" value="{{ e.category|label }} {{ e.surface_m2|int }} m² - {{ e.city.name }}"></div>
+                <div class="field"><label for="m-price-{{ e.id }}">Prix de vente (€)</label>
+                  <input id="m-price-{{ e.id }}" name="price" type="number" min="1" step="1000" required value="{{ (e.estimated_price or 0)|int }}"></div>
+                <div class="field"><label for="m-desc-{{ e.id }}">Description</label>
+                  <textarea id="m-desc-{{ e.id }}" name="description" rows="3"></textarea></div>
+                <button class="btn btn-sm" type="submit">Publier l’annonce</button>
+              </form>
+            </details>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="empty">Aucune demande en cours.</p>{% endif %}
+</section>
+
+<section id="biens" class="dash-section" data-reveal="fade" aria-labelledby="props-title">
+  <h2 id="props-title">Biens ({{ board.properties|length }}{% if board.properties|length == 100 %}+{% endif %})</h2>
+  <div class="table-wrap">
+    <table>
+      <caption class="visually-hidden">Biens du périmètre</caption>
+      <thead><tr><th scope="col">Référence</th><th scope="col">Bien</th><th scope="col">Ville</th><th scope="col" class="num">Prix</th><th scope="col">Statut</th></tr></thead>
+      <tbody>
+      {% for p in board.properties %}
+        <tr>
+          <th scope="row"><a href="/back-office/biens/{{ p.id }}">{{ p.reference }}</a></th>
+          <td>{{ p.title|typo }}</td>
+          <td>{{ p.city.name }}</td>
+          <td class="num">{{ p.price|euros }}</td>
+          <td><span class="badge badge-{{ p.status.value }}">{{ p.status|label }}</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">Aucun bien.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="ventes" class="dash-section" data-reveal="fade" aria-labelledby="sales-title">
+  <h2 id="sales-title">Dernières ventes</h2>
+  <div class="table-wrap">
+    <table>
+      <caption class="visually-hidden">Ventes conclues les plus récentes</caption>
+      <thead><tr><th scope="col">Date</th><th scope="col">Bien</th><th scope="col">Acquéreur</th><th scope="col" class="num">Prix de vente</th></tr></thead>
+      <tbody>
+      {% for t in board.transactions %}
+        <tr>
+          <td>{{ t.signed_at|date_fr }}</td>
+          <th scope="row">{{ t.listing.reference }} <span class="muted small">{{ t.listing.title|typo }}</span></th>
+          <td>{% if t.buyer %}{{ t.buyer.first_name }} {{ t.buyer.last_name }}{% else %}—{% endif %}</td>
+          <td class="num">{{ t.final_price|euros }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Aucune vente.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

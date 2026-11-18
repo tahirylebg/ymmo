@@ -1,0 +1,158 @@
+{# Reusable UI components (DRY). Each macro produces accessible markup. #}
+
+{% macro category_icon(category) -%}
+<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+  {%- if category.value in ('office', 'retail', 'warehouse') %}
+  <rect x="10" y="14" width="44" height="40"/><path d="M10 24h44M22 54V40h20v14M18 32h6M40 32h6"/>
+  {%- elif category.value == 'land' %}
+  <path d="M6 48c10-8 20-8 26 0s16 8 26 0M6 38c10-8 20-8 26 0s16 8 26 0"/><circle cx="46" cy="16" r="6"/>
+  {%- else %}
+  <path d="M8 30 32 10l24 20"/><path d="M14 26v28h36V26"/><path d="M27 54V40h10v14"/>
+  {%- endif %}
+</svg>
+{%- endmacro %}
+
+{# Descriptive alt text: listing type and city first, then the agent's description if any. #}
+{% macro photo_alt(prop, photo) -%}
+  {{ prop.category|label }} à {{ prop.city.name }}{% if photo.alt_text %} – {{ photo.alt_text }}{% endif %}
+{%- endmacro %}
+
+{# Brand motif: a Mediterranean arcade in true perspective, drawn with hairlines (decorative only).
+   Piers with thickness (two strokes), a few voussoirs, entablement and a very light cast shadow.
+   The geometry is projected once per bay count in app/web/arcade.py. #}
+{# Dark ambiance panels (login, register, home « La maison Ymmo »): a calm interior, decorative
+   (alt=""), under an ink veil drawn by the panel's CSS. Lazy: the login panel is hidden on phones,
+   so it is never fetched there. CC0, credited in img/interiors/manifest.json. #}
+{% macro ambiance_photo(sizes) -%}
+{%- set base = '/static/img/interiors/ambiance-interior' %}
+<picture class="ambiance-photo">
+  <source type="image/avif" srcset="{{ base }}-640.avif?v={{ ASSET_VERSION }} 640w, {{ base }}-1120.avif?v={{ ASSET_VERSION }} 1120w" sizes="{{ sizes }}">
+  <img src="{{ base }}-1120.webp?v={{ ASSET_VERSION }}" srcset="{{ base }}-640.webp?v={{ ASSET_VERSION }} 640w, {{ base }}-1120.webp?v={{ ASSET_VERSION }} 1120w" sizes="{{ sizes }}" alt="" width="1120" height="1400" loading="lazy" decoding="async">
+</picture>
+{%- endmacro %}
+
+{% macro arches(count=5, cls='arches') -%}
+{%- set d = arcade_paths(count) %}
+<svg class="{{ cls }}" viewBox="0 0 1200 560" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1" preserveAspectRatio="xMidYMax meet">
+  <path d="{{ d.shadow }}" fill="currentColor" fill-opacity=".09" fill-rule="evenodd" stroke="none"/>
+  <path vector-effect="non-scaling-stroke" d="{{ d.main }}"/>
+  <path vector-effect="non-scaling-stroke" opacity=".5" d="{{ d.reveal }}"/>
+  <path vector-effect="non-scaling-stroke" opacity=".45" d="{{ d.voussoirs }}"/>
+</svg>
+{%- endmacro %}
+
+{# Empty state when a listing has no photo yet: warm light and an arcade drawing. The category is
+   already printed next to it (card header, detail eyebrow), so nothing is laid over the drawing. #}
+{% macro no_photo(prop) -%}
+  <div class="placeholder" aria-hidden="true">{{ arches(3) }}</div>
+{%- endmacro %}
+
+{# Card photo. `sizes` follows the card grid: 3 columns from 64rem (max ~26rem each),
+   2 columns from 40rem, full width below; the browser picks the 640w thumbnail or the
+   1600w original accordingly. #}
+{# Phones: a full-width card (~23rem x DPR 1.75-3) only just exceeds the 640 px thumbnail, which
+   stays sharp; announcing at most 22rem keeps the browser off the 1600 px original (3x heavier). #}
+{% set CARD_SIZES = '(min-width: 64rem) 26rem, (min-width: 40rem) calc(50vw - 4rem), min(calc(100vw - 2rem), 22rem)' %}
+{% macro media(prop, size='thumb', eager=False, sizes=CARD_SIZES) -%}
+  {% set photo = prop.cover_photo %}
+  {% if photo %}
+    {% set full = '/media/' ~ photo.file_path %}
+    {% set thumb = '/media/' ~ photo.file_path.replace('.webp', '_thumb.webp') %}
+    <img src="{{ thumb if size == 'thumb' else full }}" srcset="{{ thumb }} 640w, {{ full }} 1600w" sizes="{{ sizes }}"
+         alt="{{ photo_alt(prop, photo) }}" width="640" height="480"
+         {% if eager == 'high' %}fetchpriority="high"{% elif not eager %}loading="lazy"{% endif %} decoding="async">
+  {% else %}
+    {{ no_photo(prop) }}
+  {% endif %}
+{%- endmacro %}
+
+{% macro favorite_button(prop, is_favorite, back) -%}
+<form method="post" action="/biens/{{ prop.id }}/favori" class="card-fav">
+  <input type="hidden" name="back" value="{{ back }}">
+  <button type="submit" class="icon-btn" aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+          aria-label="{{ 'Retirer' if is_favorite else 'Ajouter' }} {{ prop.title|typo }} {{ 'des' if is_favorite else 'aux' }} favoris">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.6 1.1 4.4 2.6h1.6C13.6 6.1 15.2 5 17.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>
+  </button>
+</form>
+{%- endmacro %}
+
+{# eager: False (lazy, default), True (above the fold) or 'high' (likely LCP image). #}
+{% macro property_card(prop, user=None, favorite_ids=(), back='/biens', heading='h3', sizes=None, eager=False) -%}
+<article class="property-card" aria-labelledby="prop-{{ prop.id }}-title" data-listing="{{ prop.id }}">
+  <div class="card-media" data-vt="photo">
+    {{ media(prop, eager=eager, sizes=sizes or CARD_SIZES) }}
+    {% if prop.status.value != 'available' %}<span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span>{% endif %}
+  </div>
+  {% if user and user.role.value == 'client' %}{{ favorite_button(prop, prop.id in favorite_ids, back) }}{% endif %}
+  <div class="card-body">
+    <p class="card-price"><span data-vt="price">{{ prop.price|euros }}</span></p>
+    <{{ heading }} class="card-title" data-vt="title" id="prop-{{ prop.id }}-title"><a href="/biens/{{ prop.id }}">{{ prop.title|short_title(prop.category, prop.city.name) }}<span class="visually-hidden">, {{ prop.category|label|lower }} à {{ prop.city.name }}</span></a></{{ heading }}>
+    <ul class="card-facts">
+      <li>{{ prop.surface_m2|number(unit='m²') }}</li>
+      {% if prop.rooms %}<li>{{ prop.rooms|rooms }}</li>{% endif %}
+      <li>{{ prop.price_per_m2|euros }}/m²</li>
+    </ul>
+    <p class="card-city"><span>{{ prop.category|label }}</span><span>{{ prop.city.name }} ({{ prop.city.postal_code }})</span></p>
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro field(name, label_text, values, errors, type='text', required=False, hint=None, attrs='') -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label_text }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+  {% if hint %}<span class="hint" id="f-{{ name }}-hint">{{ hint }}</span>{% endif %}
+  {% if type == 'textarea' %}
+  <textarea id="f-{{ name }}" name="{{ name }}" {% if required %}required{% endif %}
+    {% if errors.get(name) %}aria-invalid="true"{% endif %}
+    aria-describedby="{% if hint %}f-{{ name }}-hint {% endif %}{% if errors.get(name) %}f-{{ name }}-error{% endif %}" {{ attrs|safe }}>{{ values.get(name, '') }}</textarea>
+  {% else %}
+  <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ values.get(name, '') }}"
+    {% if required %}required{% endif %} {% if errors.get(name) %}aria-invalid="true"{% endif %}
+    aria-describedby="{% if hint %}f-{{ name }}-hint {% endif %}{% if errors.get(name) %}f-{{ name }}-error{% endif %}" {{ attrs|safe }}>
+  {% endif %}
+  {% if errors.get(name) %}<span class="field-error" id="f-{{ name }}-error">{{ errors[name] }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro select(name, label_text, options, selected, errors={}, required=False, empty=None, display_attr=None) -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label_text }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+  <select id="f-{{ name }}" name="{{ name }}" {% if required %}required{% endif %}
+    {% if errors.get(name) %}aria-invalid="true" aria-describedby="f-{{ name }}-error"{% endif %}>
+    {% if empty is not none %}<option value="">{{ empty }}</option>{% endif %}
+    {% for option in options %}
+      {% set value = option.value if option.value is defined else option.id %}
+      <option value="{{ value }}" {% if selected is not none and value|string == selected|string %}selected{% endif %}>
+        {{ option[display_attr] if display_attr else option|label }}
+      </option>
+    {% endfor %}
+  </select>
+  {% if errors.get(name) %}<span class="field-error" id="f-{{ name }}-error">{{ errors[name] }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro form_errors(errors) -%}
+  {% if errors %}
+  <div class="alert alert-error" role="alert" tabindex="-1" data-autofocus>
+    <p><strong>Le formulaire contient {{ errors|length }} erreur{{ 's' if errors|length > 1 }}.</strong></p>
+    {% if errors.get('__all__') %}<p>{{ errors['__all__'] }}</p>{% endif %}
+  </div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro pagination(page, page_url) -%}
+{% if page.pages > 1 %}
+<nav class="pagination" aria-label="Pagination des résultats">
+  <ul>
+    {% if page.has_previous %}<li><a href="{{ page_url(page.page - 1) }}" rel="prev">‹ <span class="visually-hidden">Page </span>précédente</a></li>{% endif %}
+    {% for n in range(1, page.pages + 1) %}
+      {% if n == 1 or n == page.pages or (n - page.page)|abs <= 2 %}
+        <li>{% if n == page.page %}<span aria-current="page"><span class="visually-hidden">Page </span>{{ n }}</span>
+            {% else %}<a href="{{ page_url(n) }}"><span class="visually-hidden">Page </span>{{ n }}</a>{% endif %}</li>
+      {% elif (n - page.page)|abs == 3 %}<li><span aria-hidden="true">…</span></li>{% endif %}
+    {% endfor %}
+    {% if page.has_next %}<li><a href="{{ page_url(page.page + 1) }}" rel="next"><span class="visually-hidden">Page </span>suivante ›</a></li>{% endif %}
+  </ul>
+</nav>
+{% endif %}
+{%- endmacro %}

@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ymmo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ymmo}
+      POSTGRES_DB: ${POSTGRES_DB:-ymmo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ymmo} -d ${POSTGRES_DB:-ymmo}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Not exposed on the host by default (only the app talks to the database).
+    # Uncomment to inspect it with a local SQL client:
+    # ports: ["5432:5432"]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_HOST: db
+      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - media:/app/media
+      - models:/app/analytics/models
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  media:
+  models:

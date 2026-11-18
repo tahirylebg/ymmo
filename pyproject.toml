@@ -1,0 +1,33 @@
+[project]
+name = "ymmo"
+version = "0.1.0"
+description = "Ymmo - centralized real-estate platform with data analytics"
+requires-python = ">=3.12"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes, I: isort, B: bugbear, UP: pyupgrade, N: naming, SIM: simplify
+select = ["E", "F", "I", "B", "UP", "N", "SIM"]
+ignore = ["B008"]  # FastAPI uses function calls in default arguments (Depends)
+
+[tool.ruff.lint.per-file-ignores]
+"analytics/*" = ["N803", "N806"]  # X / X_train: scikit-learn naming convention
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "analytics", "scripts"]
+known-third-party = ["alembic"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "postgres: tests that need a real PostgreSQL database (raw SQL views)",
+]

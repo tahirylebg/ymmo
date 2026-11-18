@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block description %}Ymmo, réseau immobilier : achat et vente de biens résidentiels et professionnels, avec des agences dans toute la France.{% endblock %}">
+  <meta name="theme-color" content="#f6f2eb">
+  <title>{% block title %}Ymmo{% endblock %} · Ymmo immobilier</title>
+  {#- SEO: canonical URL without query string (filters, pagination), Open Graph / Twitter card.
+      Pages override `og_image` (absolute URL) and add structured data through `head_extra`. #}
+  {%- set canonical_url = request.url.replace(query='', fragment='')|string %}
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url }}{% endblock %}">
+  <meta property="og:site_name" content="Ymmo immobilier">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ self.title() }} · Ymmo immobilier">
+  <meta property="og:description" content="{{ self.description() }}">
+  <meta property="og:url" content="{{ self.canonical() }}">
+  <meta property="og:image" content="{% block og_image %}{{ url_for('static', path='img/og-ymmo.jpg') }}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+  {% block head_extra %}{% endblock %}
+  <link rel="icon" href="{{ url_for('static', path='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="preload" href="{{ url_for('static', path='fonts/newsreader-latin-opsz-wght200-400.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', path='fonts/public-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}?v={{ ASSET_VERSION }}">
+  {# Page-change motion: parser-blocking on purpose (tiny, cached), so its `pagereveal` listener
+     and the reveals' hidden states are in place before the first render. The new page is not
+     painted before its main content is parsed, so the transition never captures half a page. #}
+  <script src="{{ url_for('static', path='js/motion.js') }}?v={{ ASSET_VERSION }}"></script>
+  <link rel="expect" href="#site-footer" blocking="render">
+  <script src="{{ url_for('static', path='js/app.js') }}?v={{ ASSET_VERSION }}" defer></script>
+  {# Listing pages load ahead: a detail page is prerendered as soon as the pointer/finger goes
+     down (conservative: a detail GET records a view, so hover-only prerenders would inflate the
+     back-office view counts); result pages are prefetched on hover.
+     Read-only GET pages only: never the logout, the back-office or anything that writes. #}
+  <script type="speculationrules">
+  {
+    "prerender": [{
+      "where": {"and": [
+        {"href_matches": {"pathname": "/biens/:id([0-9]+)"}},
+        {"not": {"selector_matches": "[data-no-prefetch]"}}
+      ]},
+      "eagerness": "conservative"
+    }],
+    "prefetch": [{
+      "where": {"and": [
+        {"or": [
+          {"href_matches": {"pathname": "/biens"}},
+          {"href_matches": {"pathname": "/"}},
+          {"href_matches": {"pathname": "/estimer"}}
+        ]},
+        {"not": {"selector_matches": "[data-no-prefetch]"}}
+      ]},
+      "eagerness": "moderate"
+    }]
+  }
+  </script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Aller au contenu principal</a>
+
+  {% set path = request.url.path %}
+  <header class="site-header" data-header>
+    <div class="container">
+      <a class="brand" href="/" aria-label="Ymmo, accueil">
+        <span class="brand-mark">Ymmo</span><span class="brand-tag">Immobilier · depuis Aix-en-Provence</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h18M3 16h18"/></svg>
+        Menu
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
+        <ul>
+          <li><a href="/biens" {% if path.startswith('/biens') %}aria-current="page"{% endif %}>Acheter</a></li>
+          <li><a href="/estimer" {% if path == '/estimer' %}aria-current="page"{% endif %}>Vendre / Estimer</a></li>
+          {% if user and user.is_staff %}
+            <li><a href="/back-office" {% if path.startswith('/back-office') %}aria-current="page"{% endif %}>Back-office</a></li>
+            <li><a href="/analytics" {% if path.startswith('/analytics') %}aria-current="page"{% endif %}>Analyses</a></li>
+          {% elif user %}
+            <li><a href="/mon-espace" {% if path.startswith('/mon-espace') %}aria-current="page"{% endif %}>Mon espace</a></li>
+          {% endif %}
+          {% if user %}
+            <li class="nav-user">{{ user.first_name }} · {{ user.role|label }}</li>
+            <li>
+              <form method="post" action="/deconnexion" class="inline-form">
+                <button type="submit" class="link">Se déconnecter</button>
+              </form>
+            </li>
+          {% else %}
+            <li><a href="/connexion" {% if path == '/connexion' %}aria-current="page"{% endif %}>Se connecter</a></li>
+            <li><a class="btn btn-sm" href="/inscription">Créer un compte</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    {% block hero %}{% endblock %}
+    <div class="container">
+      <div role="status" aria-live="polite">
+        {% for flash in flashes or [] %}
+          <div class="alert alert-{{ flash.level }}">{{ flash.message }}</div>
+        {% endfor %}
+      </div>
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="site-footer" id="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="brand-mark brand-mark-light">Ymmo</span>
+          <p class="footer-lead">L’immobilier résidentiel et professionnel, accompagné par des agents qui connaissent chaque rue.</p>
+        </div>
+        <nav aria-labelledby="footer-explore">
+          <h2 id="footer-explore">Explorer</h2>
+          <ul>
+            <li><a href="/biens">Biens à vendre</a></li>
+            <li><a href="/estimer">Estimer mon bien</a></li>
+            <li><a href="/biens?sort=price_desc">Biens d’exception</a></li>
+          </ul>
+        </nav>
+        <nav aria-labelledby="footer-account">
+          <h2 id="footer-account">Espace</h2>
+          <ul>
+            {% if user %}
+              <li><a href="{{ '/back-office' if user.is_staff else '/mon-espace' }}">Mon espace</a></li>
+            {% else %}
+              <li><a href="/connexion">Se connecter</a></li>
+              <li><a href="/inscription">Créer un compte</a></li>
+            {% endif %}
+            <li><a href="/api/docs">API (documentation)</a></li>
+          </ul>
+        </nav>
+        <div>
+          <h2>Siège</h2>
+          <p>Aix-en-Provence<br>Agences dans toute la France</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Ymmo · Réseau immobilier</p>
+        <p>Projet fil rouge B2 · Ynov Informatique</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

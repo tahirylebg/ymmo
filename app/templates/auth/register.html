@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "macros.html" import field, form_errors, ambiance_photo %}
+{% block title %}Créer un compte{% endblock %}
+{% block description %}Créez votre compte Ymmo gratuit : enregistrez vos biens favoris, demandez des visites et faites des offres en ligne.{% endblock %}
+{% block content %}
+<div class="auth-layout">
+  <aside class="auth-visual" aria-hidden="true" data-reveal>
+    {{ ambiance_photo('(min-width: 75rem) 36rem, 45vw') }}
+    <blockquote>Un compte pour suivre chaque étape de votre projet immobilier.</blockquote>
+    <p>Ymmo · Réseau immobilier</p>
+  </aside>
+<div class="form-narrow" data-reveal data-reveal-delay="1">
+  <h1>Créer un compte client</h1>
+  <p class="muted">Enregistrez vos favoris, demandez des visites, faites des offres et suivez vos démarches.</p>
+  {{ form_errors(errors) }}
+  <form method="post" action="/inscription" class="form-card" novalidate>
+    <div class="form-grid cols-2">
+      {{ field('first_name', 'Prénom', values, errors, required=True, attrs='autocomplete="given-name"') }}
+      {{ field('last_name', 'Nom', values, errors, required=True, attrs='autocomplete="family-name"') }}
+    </div>
+    {{ field('email', 'Adresse e-mail', values, errors, type='email', required=True, attrs='autocomplete="email"') }}
+    {{ field('phone', 'Téléphone', values, errors, type='tel', hint='Facultatif, ex. 06 12 34 56 78', attrs='autocomplete="tel"') }}
+    {{ field('password', 'Mot de passe', {}, errors, type='password', required=True,
+             hint='10 caractères minimum, avec une majuscule, une minuscule et un chiffre.',
+             attrs='autocomplete="new-password" minlength="10"') }}
+    <p class="small muted">Les champs marqués d’un astérisque (*) sont obligatoires.</p>
+    <button class="btn btn-block" type="submit">Créer mon compte</button>
+  </form>
+  <p class="muted">Déjà client ? <a href="/connexion">Se connecter</a></p>
+</div>
+</div>
+{% endblock %}

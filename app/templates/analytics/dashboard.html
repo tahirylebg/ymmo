@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Analyses et prévisions{% endblock %}
+{% block description %}Analyses Ymmo : prévisions de ventes, tendance des prix au m², score d’opportunité des zones et performance des agences.{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
+  <ol><li><a href="/back-office">Back-office</a></li><li aria-current="page">Analyses</li></ol>
+</nav>
+<div class="section-head">
+  <div>
+    <h1>Analyses et prévisions</h1>
+    <p class="muted">Ventes conclues sur le réseau Ymmo · mise à jour toutes les 5 minutes.</p>
+  </div>
+  {% if data %}
+  <div class="btn-row">
+    <a class="btn" href="/api/analytics/export.pdf" download>Rapport PDF</a>
+    <a class="btn btn-secondary" href="/api/analytics/export.csv" download>Données CSV</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if error %}
+  <p class="alert alert-info" role="status">{{ error }}</p>
+{% else %}
+<h2 class="visually-hidden">Indicateurs clés</h2>
+<ul class="kpis">
+  {% for label_text, value in data.kpis.items() %}
+    <li class="kpi"><span class="kpi-value">{{ value }}</span><span class="kpi-label">{{ label_text }}</span></li>
+  {% endfor %}
+</ul>
+
+<nav class="dash-nav" aria-label="Sections des analyses">
+  <ul>
+    <li><a href="#previsions">Prévisions</a></li>
+    <li><a href="#zones">Zones intéressantes</a></li>
+    <li><a href="#marche">Prix par ville</a></li>
+    <li><a href="#delais">Délais de vente</a></li>
+    <li><a href="#populaires">Biens populaires</a></li>
+    <li><a href="#agences">Agences</a></li>
+    <li><a href="#modele">Modèle et données</a></li>
+  </ul>
+</nav>
+
+{% set fc = data.forecast %}
+<section id="previsions" class="dash-section" data-reveal="fade" aria-labelledby="fc-title">
+  <h2 id="fc-title">Prévisions à 6 et 12 mois</h2>
+  <div class="chart-grid">
+    <figure class="chart">
+      <figcaption>Ventes mensuelles et prévision</figcaption>
+      <img src="/api/analytics/charts/ventes-prevision.svg" alt="Courbe des ventes mensuelles : {{ fc.total_sales(12) }} ventes prévues sur les 12 prochains mois. Détail dans le tableau ci-dessous." width="800" height="420" loading="lazy">
+      <details>
+        <summary>Voir les données de prévision</summary>
+        <div class="table-wrap">
+          <table>
+            <caption class="visually-hidden">Prévision mensuelle</caption>
+            <thead><tr><th scope="col">Mois</th><th scope="col" class="num">Ventes prévues</th><th scope="col" class="num">Fourchette</th><th scope="col" class="num">Prix €/m²</th></tr></thead>
+            <tbody>
+            {% for row in fc.forecast.to_dict('records') %}
+              <tr><th scope="row">{{ row.month|date_fr }}</th><td class="num">{{ row.sales_count|number(0) }}</td>
+                <td class="num">{{ row.sales_low|number(0) }} – {{ row.sales_high|number(0) }}</td><td class="num">{{ row.avg_price_m2|euros }}</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+    <figure class="chart">
+      <figcaption>Prix moyen au m²</figcaption>
+      <img src="/api/analytics/charts/prix-tendance.svg" alt="Courbe du prix moyen au m² : tendance de {{ fc.price_trend_yearly|signed_percent }} par an." width="800" height="420" loading="lazy">
+      <p class="small muted">Tendance ajustée : {{ fc.price_trend_yearly|signed_percent }} par an. Modèle : régression linéaire tendance + saisonnalité annuelle, intervalle à 95 %.</p>
+    </figure>
+  </div>
+</section>
+
+<section id="zones" class="dash-section" data-reveal="fade" aria-labelledby="zones-title">
+  <h2 id="zones-title">Zones intéressantes où acheter</h2>
+  <p class="muted">Score sur 100 : croissance des prix (45 %), rapidité de vente (25 %), demande en ligne (15 %), prix relatif au département (15 %).</p>
+  <div class="chart-grid">
+    <figure class="chart">
+      <figcaption>Top 10 des zones</figcaption>
+      <img src="/api/analytics/charts/zones.svg" alt="Classement des zones par score d’opportunité, détaillé dans le tableau." width="800" height="480" loading="lazy">
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <caption class="visually-hidden">Score d’opportunité par ville</caption>
+        <thead><tr><th scope="col">Ville</th><th scope="col" class="num">Score</th><th scope="col" class="num">Évolution/an</th><th scope="col" class="num">Délai médian</th><th scope="col" class="num">Prix €/m²</th></tr></thead>
+        <tbody>
+        {% for z in data.zones.head(15).to_dict('records') %}
+          <tr><th scope="row">{{ z.city_key }}</th><td class="num"><strong>{{ z.score|number(0) }}</strong></td>
+            <td class="num">{{ z.growth|signed_percent }}</td><td class="num">{{ z.days_to_sell|number(0, 'j') }}</td><td class="num">{{ z.price_m2|euros }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="marche" class="dash-section" data-reveal="fade" aria-labelledby="market-title">
+  <h2 id="market-title">Prix moyen au m² par ville</h2>
+  <div class="chart-grid">
+    <figure class="chart">
+      <figcaption>15 villes les plus chères</figcaption>
+      <img src="/api/analytics/charts/prix-par-ville.svg" alt="Prix moyen de vente au m² par ville, détaillé dans le tableau." width="800" height="600" loading="lazy">
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <caption class="visually-hidden">Marché par ville (vue SQL v_city_market_stats)</caption>
+        <thead><tr><th scope="col">Ville</th><th scope="col" class="num">Ventes</th><th scope="col" class="num">Moyenne €/m²</th><th scope="col" class="num">Médiane €/m²</th><th scope="col" class="num">Annonces</th></tr></thead>
+        <tbody>
+        {% for c in data.city_stats.to_dict('records') %}
+          <tr><th scope="row">{{ c.city }} <span class="muted small">{{ c.postal_code }}</span></th><td class="num">{{ c.sales_count }}</td>
+            <td class="num">{{ c.avg_sale_price_m2|euros }}</td><td class="num">{{ c.median_sale_price_m2|euros }}</td><td class="num">{{ c.active_listings }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="delais" class="dash-section" data-reveal="fade" aria-labelledby="dur-title">
+  <h2 id="dur-title">Délai de vente par type de bien</h2>
+  <div class="chart-grid">
+    <figure class="chart">
+      <figcaption>Jours entre mise en vente et signature</figcaption>
+      <img src="/api/analytics/charts/delais.svg" alt="Délai de vente médian par type de bien, détaillé dans le tableau." width="800" height="340" loading="lazy">
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <caption class="visually-hidden">Délais de vente</caption>
+        <thead><tr><th scope="col">Type</th><th scope="col" class="num">Ventes</th><th scope="col" class="num">Moyenne</th><th scope="col" class="num">Médiane</th><th scope="col" class="num">90 %</th><th scope="col" class="num">Négociation</th></tr></thead>
+        <tbody>
+        {% for d in data.durations.to_dict('records') %}
+          <tr><th scope="row">{{ d.category|label }}</th><td class="num">{{ d.sales }}</td><td class="num">{{ d.avg_days|number(0, 'j') }}</td>
+            <td class="num">{{ d.median_days|number(0, 'j') }}</td><td class="num">{{ d.p90_days|number(0, 'j') }}</td><td class="num">-{{ d.avg_negotiation_pct|number(1, '%') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="populaires" class="dash-section" data-reveal="fade" aria-labelledby="pop-title">
+  <h2 id="pop-title">Biens les plus populaires</h2>
+  <div class="table-wrap">
+    <table>
+      <caption class="visually-hidden">Classement par popularité (vue SQL v_property_popularity, DENSE_RANK)</caption>
+      <thead><tr><th scope="col" class="num">Rang</th><th scope="col">Bien</th><th scope="col">Ville</th><th scope="col" class="num">Vues (30 j)</th><th scope="col" class="num">Favoris</th><th scope="col" class="num">Visites</th><th scope="col" class="num">Offres</th></tr></thead>
+      <tbody>
+      {% for p in data.popular.to_dict('records') %}
+        <tr><td class="num">{{ p.global_rank }}</td><th scope="row"><a href="/biens/{{ p.property_id }}">{{ p.title|typo }}</a></th><td>{{ p.city }}</td>
+          <td class="num">{{ p.views_30d }}</td><td class="num">{{ p.favorites_count }}</td><td class="num">{{ p.visits_count }}</td><td class="num">{{ p.offers_count }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="agences" class="dash-section" data-reveal="fade" aria-labelledby="ag-title">
+  <h2 id="ag-title">Performance des agences</h2>
+  <div class="chart-grid">
+    <figure class="chart">
+      <figcaption>Volume de ventes cumulé</figcaption>
+      <img src="/api/analytics/charts/agences.svg" alt="Volume de ventes par agence, détaillé dans le tableau." width="800" height="520" loading="lazy">
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <caption class="visually-hidden">Classement des agences (vue SQL v_agency_performance, RANK)</caption>
+        <thead><tr><th scope="col" class="num">Rang</th><th scope="col">Agence</th><th scope="col" class="num">Ventes</th><th scope="col" class="num">Volume</th><th scope="col" class="num">Délai moyen</th></tr></thead>
+        <tbody>
+        {% for a in data.agencies.to_dict('records') %}
+          <tr><td class="num">{{ a.revenue_rank }}</td><th scope="row">{{ a.name }}</th><td class="num">{{ a.sales_count }}</td>
+            <td class="num">{{ a.revenue|euros }}</td><td class="num">{{ a.avg_days_to_sell|number(0, 'j') if a.avg_days_to_sell is not none else '—' }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="modele" class="dash-section" data-reveal="fade" aria-labelledby="model-title">
+  <h2 id="model-title">Modèle d’estimation et qualité des données</h2>
+  <div class="chart-grid">
+    <div class="panel">
+      <h3 class="h3">Modèle de prix (régression)</h3>
+      {% set m = data.model_metrics %}
+      {% if m %}
+        <ul>
+          <li>Entraîné sur {{ m.n_train }} ventes, testé sur {{ m.n_test }} ventes jamais vues.</li>
+          <li>Erreur moyenne : <strong>{{ (m.mape * 100)|number(1, '%') }}</strong> ({{ m.mae_eur|euros }}), contre {{ (m.baseline_mape * 100)|number(1, '%') }} pour la méthode manuelle « prix médian au m² de la même catégorie dans la ville × surface ».</li>
+          <li>R² (échelle log) : {{ m.r2|number(2) }}.</li>
+        </ul>
+      {% else %}
+        <p>Aucun modèle entraîné : les estimations utilisent la moyenne des ventes comparables.</p>
+      {% endif %}
+      {% if user.role.value == 'admin' %}
+        <form method="post" action="/analytics/modele"><button class="btn btn-secondary btn-sm" type="submit">Réentraîner le modèle</button></form>
+      {% endif %}
+    </div>
+    <div class="panel">
+      <h3 class="h3">Nettoyage des données</h3>
+      <ul>
+        <li>{{ data.cleaning.initial_rows }} ventes en entrée</li>
+        {% for rule, removed in data.cleaning.steps %}<li>{{ rule }} : {{ removed }} supprimée(s)</li>{% endfor %}
+        <li><strong>{{ data.cleaning.final_rows }} ventes conservées</strong></li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

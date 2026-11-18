@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "macros.html" import property_card, pagination %}
+{% block title %}Biens à vendre{% if filters.city %} à {{ filters.city }}{% endif %}{% endblock %}
+{% block description %}{{ page.total }} bien{{ 's' if page.total != 1 }} à vendre{% if filters.city %} à {{ filters.city }}{% endif %} : appartements, maisons, terrains et locaux professionnels présentés par les agences Ymmo.{% endblock %}
+
+{% block content %}
+<header class="page-head" data-reveal="rule">
+  <p class="eyebrow" data-reveal="eyebrow"><span>Acheter</span></p>
+  <h1>Biens à vendre{% if filters.city %} · {{ filters.city }}{% endif %}</h1>
+  <p class="lead">Appartements, maisons, terrains et locaux professionnels, présentés par nos agences.</p>
+</header>
+{% if error %}<div class="alert alert-info">{{ error }}</div>{% endif %}
+
+<div class="search-layout">
+  <aside class="filters" aria-labelledby="filters-title">
+    <details data-open-wide>
+      <summary id="filters-title">Filtres de recherche</summary>
+      <form method="get" action="/biens" class="form-card" role="search" aria-label="Filtrer les biens">
+        <div class="field">
+          <label for="f-city">Ville ou code postal</label>
+          <input id="f-city" name="city" type="search" value="{{ filters.city or '' }}">
+        </div>
+        <div class="field">
+          <label for="f-type">Type</label>
+          <select id="f-type" name="property_type">
+            <option value="">Tous</option>
+            {% for t in property_types %}<option value="{{ t.value }}" {% if filters.property_type == t %}selected{% endif %}>{{ t|label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-category">Catégorie</label>
+          <select id="f-category" name="category">
+            <option value="">Toutes</option>
+            {% for c in categories %}<option value="{{ c.value }}" {% if filters.category == c %}selected{% endif %}>{{ c|label }}</option>{% endfor %}
+          </select>
+        </div>
+        <fieldset class="field">
+          <legend>Prix (€)</legend>
+          <div class="range">
+            <label class="visually-hidden" for="f-min-price">Prix minimum</label>
+            <input id="f-min-price" name="min_price" type="number" min="0" step="10000" placeholder="Min" value="{{ filters.min_price or '' }}">
+            <span class="range-sep" aria-hidden="true">à</span>
+            <label class="visually-hidden" for="f-max-price">Prix maximum</label>
+            <input id="f-max-price" name="max_price" type="number" min="0" step="10000" placeholder="Max" value="{{ filters.max_price or '' }}">
+          </div>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Surface (m²)</legend>
+          <div class="range">
+            <label class="visually-hidden" for="f-min-surface">Surface minimum</label>
+            <input id="f-min-surface" name="min_surface" type="number" min="0" placeholder="Min" value="{{ filters.min_surface or '' }}">
+            <span class="range-sep" aria-hidden="true">à</span>
+            <label class="visually-hidden" for="f-max-surface">Surface maximum</label>
+            <input id="f-max-surface" name="max_surface" type="number" min="0" placeholder="Max" value="{{ filters.max_surface or '' }}">
+          </div>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Pièces minimum</legend>
+          {% set rooms_min = filters.min_rooms or 0 %}
+          <div class="pills">
+            <input class="pill-input" type="radio" id="f-rooms-any" name="min_rooms" value="" {% if not rooms_min %}checked{% endif %}>
+            <label class="pill" for="f-rooms-any">Tous</label>
+            {% for n in range(1, 6) %}
+            <input class="pill-input" type="radio" id="f-rooms-{{ n }}" name="min_rooms" value="{{ n }}"
+                   {% if rooms_min == n %}checked{% endif %}>
+            <label class="pill" for="f-rooms-{{ n }}">{{ n }}{% if n == 5 %}<span aria-hidden="true">+</span><span class="visually-hidden"> ou plus</span>{% endif %}</label>
+            {% endfor %}
+            {% if rooms_min > 5 %}{# value from a link or bookmark: kept as is, never widened to 5 #}
+            <input class="pill-input" type="radio" id="f-rooms-more" name="min_rooms" value="{{ rooms_min }}" checked>
+            <label class="pill" for="f-rooms-more">{{ rooms_min }}<span aria-hidden="true">+</span><span class="visually-hidden"> ou plus</span></label>
+            {% endif %}
+          </div>
+        </fieldset>
+        <input type="hidden" name="sort" value="{{ filters.sort.value }}">
+        <div class="btn-row">
+          <button class="btn" type="submit">Appliquer</button>
+          <a class="btn btn-ghost" href="/biens">Réinitialiser</a>
+        </div>
+      </form>
+    </details>
+  </aside>
+
+  <section aria-labelledby="results-title">
+    <div class="results-bar">
+      <h2 id="results-title" class="h3">{{ page.total }} bien{{ 's' if page.total != 1 }} trouvé{{ 's' if page.total != 1 }}</h2>
+      <form method="get" action="/biens" class="field" data-autosubmit>
+        {% for key, value in request.query_params.items() if key not in ('sort', 'page') %}
+          <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+        <label for="sort">Trier par</label>
+        <select id="sort" name="sort">
+          {% for s in sorts %}<option value="{{ s.value }}" {% if filters.sort == s %}selected{% endif %}>{{ s|label }}</option>{% endfor %}
+        </select>
+        <noscript><button class="btn btn-sm" type="submit">Trier</button></noscript>
+      </form>
+    </div>
+
+    {% if page.items %}
+      <ul class="card-grid" data-stagger="cards">
+        {% for prop in page.items %}
+          {# The first row is on screen at load: no lazy loading there, the first photo first #}
+          <li>{{ property_card(prop, user, favorite_ids, back=request.url.path ~ ('?' ~ request.url.query if request.url.query else ''),
+                               eager='high' if loop.first else loop.index <= 3) }}</li>
+        {% endfor %}
+      </ul>
+      {{ pagination(page, page_url) }}
+    {% else %}
+      <p class="empty">Aucun bien ne correspond à vos critères. Essayez d’élargir votre budget ou votre zone de recherche.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

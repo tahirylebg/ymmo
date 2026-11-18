@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% from "macros.html" import property_card %}
+{% block title %}Mon espace{% endblock %}
+{% block description %}Votre espace client Ymmo : biens favoris, visites, offres et estimations en cours.{% endblock %}
+{% block content %}
+<h1>Bonjour {{ user.first_name }}</h1>
+
+<nav class="dash-nav" aria-label="Sections de mon espace">
+  <ul>
+    <li><a href="#favoris">Favoris ({{ dashboard.favorites|length }})</a></li>
+    <li><a href="#visites">Visites ({{ dashboard.visits|length }})</a></li>
+    <li><a href="#offres">Offres ({{ dashboard.offers|length }})</a></li>
+    <li><a href="#estimations">Biens à vendre ({{ dashboard.estimations|length }})</a></li>
+  </ul>
+</nav>
+
+<section id="favoris" class="dash-section" data-reveal="fade" aria-labelledby="fav-title">
+  <h2 id="fav-title">Mes favoris</h2>
+  {% if dashboard.favorites %}
+    <ul class="card-grid">
+      {% for fav in dashboard.favorites %}
+        <li>{{ property_card(fav.listing, user, [fav.property_id], back='/mon-espace#favoris') }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">Aucun favori pour l’instant. <a href="/biens">Parcourir les biens</a></p>
+  {% endif %}
+</section>
+
+<section id="visites" class="dash-section" data-reveal="fade" aria-labelledby="visits-title">
+  <h2 id="visits-title">Mes visites</h2>
+  {% if dashboard.visits %}
+    <ul class="list-cards">
+      {% for visit in dashboard.visits %}
+        <li class="list-card">
+          <div>
+            <h3><a href="/biens/{{ visit.property_id }}">{{ visit.listing.title|typo }}</a></h3>
+            <p class="muted small">{{ visit.scheduled_at|datetime_fr }}{% if visit.agent %} · avec {{ visit.agent.first_name }} {{ visit.agent.last_name }}{% endif %}</p>
+            <span class="badge badge-{{ visit.status.value }}">{{ visit.status|label }}</span>
+          </div>
+          {% if visit.status.value in ('requested', 'confirmed') %}
+            <form method="post" action="/mon-espace/visites/{{ visit.id }}/annuler" data-confirm="Annuler cette visite ?">
+              <button class="btn btn-secondary btn-sm" type="submit">Annuler<span class="visually-hidden"> la visite du {{ visit.scheduled_at|datetime_fr }}</span></button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">Aucune visite demandée.</p>
+  {% endif %}
+</section>
+
+<section id="offres" class="dash-section" data-reveal="fade" aria-labelledby="offers-title">
+  <h2 id="offers-title">Mes offres d’achat</h2>
+  {% if dashboard.offers %}
+    <div class="table-wrap">
+      <table>
+        <caption class="visually-hidden">Offres d’achat envoyées</caption>
+        <thead><tr><th scope="col">Bien</th><th scope="col" class="num">Prix affiché</th><th scope="col" class="num">Mon offre</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>
+          {% for offer in dashboard.offers %}
+          <tr>
+            <th scope="row"><a href="/biens/{{ offer.property_id }}">{{ offer.listing.title|typo }}</a></th>
+            <td class="num">{{ offer.listing.price|euros }}</td>
+            <td class="num">{{ offer.amount|euros }}</td>
+            <td><span class="badge badge-{{ offer.status.value }}">{{ offer.status|label }}</span></td>
+            <td>{% if offer.status.value == 'pending' %}
+              <form method="post" action="/mon-espace/offres/{{ offer.id }}/retirer" data-confirm="Retirer cette offre ?">
+                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l’offre sur {{ offer.listing.title|typo }}</span></button>
+              </form>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">Aucune offre envoyée.</p>
+  {% endif %}
+</section>
+
+<section id="estimations" class="dash-section" data-reveal="fade" aria-labelledby="est-title">
+  <div class="section-head">
+    <h2 id="est-title">Mes biens à vendre</h2>
+    <a class="btn btn-secondary btn-sm" href="/estimer">Déposer un bien</a>
+  </div>
+  {% if dashboard.estimations %}
+    <ul class="list-cards">
+      {% for est in dashboard.estimations %}
+        <li class="list-card">
+          <div>
+            <h3>{{ est.category|label }} de {{ est.surface_m2|number(unit='m²') }} · {{ est.city.name }}</h3>
+            <p class="muted small">Envoyée le {{ est.created_at|date_fr }} · estimation indicative : <strong>{{ est.estimated_price|euros }}</strong>{% if est.desired_price %} · prix souhaité : {{ est.desired_price|euros }}{% endif %}</p>
+            <span class="badge badge-{{ est.status.value }}">{{ est.status|label }}</span>
+          </div>
+          {% if est.property_id %}<a class="btn btn-secondary btn-sm" href="/biens/{{ est.property_id }}">Voir l’annonce</a>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">Vous n’avez pas encore mis de bien en vente.</p>
+  {% endif %}
+</section>
+{% endblock %}

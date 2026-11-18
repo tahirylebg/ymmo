@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% from "macros.html" import field, select, form_errors %}
+{% block title %}{{ "Modifier " ~ prop.reference if prop else "Publier un bien" }}{% endblock %}
+{% block description %}Back-office Ymmo : {{ 'modification du bien ' ~ prop.reference if prop else 'publication d’un nouveau bien' }}.{% endblock %}
+{% block content %}
+{% set v = values if values else ({
+  'title': prop.title, 'description': prop.description, 'price': prop.price|int,
+  'surface_m2': prop.surface_m2, 'rooms': prop.rooms, 'bedrooms': prop.bedrooms if prop.bedrooms is not none else '',
+  'address': prop.address, 'latitude': prop.latitude or '', 'longitude': prop.longitude or ''} if prop else {}) %}
+
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
+  <ol><li><a href="/back-office">Back-office</a></li><li aria-current="page">{{ prop.reference if prop else "Nouveau bien" }}</li></ol>
+</nav>
+
+<div class="section-head">
+  <h1>{{ "Bien " ~ prop.reference if prop else "Publier un bien" }}</h1>
+  {% if prop %}
+    <p><span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span> · {{ views }} vue{{ 's' if views != 1 }} · <a href="/biens/{{ prop.id }}">voir l’annonce publique</a></p>
+  {% endif %}
+</div>
+
+{{ form_errors(errors) }}
+<div class="detail-layout">
+  <form method="post" action="{{ '/back-office/biens/' ~ prop.id if prop else '/back-office/biens/nouveau' }}" class="form-card" novalidate>
+    <fieldset>
+      <legend class="h3">Annonce</legend>
+      {{ field('title', 'Titre', v, errors, required=True, attrs='minlength="5" maxlength="150"') }}
+      {{ field('description', 'Description', v, errors, type='textarea', attrs='maxlength="5000"') }}
+    </fieldset>
+    {% if not prop %}
+    <div class="form-grid cols-2">
+      {{ select('property_type', 'Usage', property_types, v.get('property_type'), errors, required=True) }}
+      {{ select('category', 'Catégorie', categories, v.get('category'), errors, required=True) }}
+    </div>
+    {% endif %}
+    <div class="form-grid cols-2">
+      {{ field('price', 'Prix (€)', v, errors, type='number', required=True, attrs='min="1" step="1000" inputmode="numeric"') }}
+      {{ field('surface_m2', 'Surface (m²)', v, errors, type='number', required=True, attrs='min="1" step="0.1" inputmode="decimal"') }}
+      {{ field('rooms', 'Pièces', v, errors, type='number', attrs='min="0" max="100"') }}
+      {{ field('bedrooms', 'Chambres', v, errors, type='number', attrs='min="0" max="50"') }}
+    </div>
+    {{ field('address', 'Adresse', v, errors, required=True) }}
+    {% if not prop %}
+      {{ select('city_id', 'Ville', cities, v.get('city_id'), errors, required=True, empty='Choisir une ville', display_attr='label') }}
+      {% if agencies %}{{ select('agency_id', 'Agence', agencies, v.get('agency_id'), errors, required=True, empty='Choisir une agence', display_attr='name') }}{% endif %}
+    {% endif %}
+    <div class="form-grid cols-2">
+      {{ field('latitude', 'Latitude', v, errors, type='number', hint='Facultatif (GPS)', attrs='step="0.00001" min="-90" max="90"') }}
+      {{ field('longitude', 'Longitude', v, errors, type='number', hint='Facultatif (GPS)', attrs='step="0.00001" min="-180" max="180"') }}
+    </div>
+    <button class="btn" type="submit">{{ "Enregistrer" if prop else "Publier le bien" }}</button>
+  </form>
+
+  {% if prop %}
+  <aside class="detail-aside">
+    <section class="panel" id="photos" aria-labelledby="photos-title">
+      <h2 id="photos-title" class="h3">Photos ({{ prop.photos|length }})</h2>
+      {% for photo in prop.photos %}
+        <figure class="list-card">
+          <img src="/media/{{ photo.file_path.replace('.webp', '_thumb.webp') }}" alt="{{ photo.alt_text }}" width="640" height="480" loading="lazy">
+          <form method="post" action="/back-office/biens/{{ prop.id }}/photos/{{ photo.id }}/supprimer" data-confirm="Supprimer cette photo ?">
+            <button class="btn btn-ghost btn-sm" type="submit">Supprimer<span class="visually-hidden"> la photo « {{ photo.alt_text }} »</span></button>
+          </form>
+        </figure>
+      {% endfor %}
+      <form method="post" action="/back-office/biens/{{ prop.id }}/photos" enctype="multipart/form-data">
+        <div class="field"><label for="photo-file">Ajouter une photo</label>
+          <span class="hint" id="photo-hint">JPEG, PNG ou WebP, 8 Mo max. Convertie automatiquement en WebP.</span>
+          <input id="photo-file" name="file" type="file" accept="image/jpeg,image/png,image/webp" required aria-describedby="photo-hint"></div>
+        <div class="field"><label for="photo-alt">Description de la photo</label>
+          <span class="hint" id="alt-hint">Décrivez ce que montre la photo (lu par les lecteurs d’écran).</span>
+          <input id="photo-alt" name="alt_text" maxlength="255" aria-describedby="alt-hint"></div>
+        <button class="btn btn-secondary btn-sm" type="submit">Envoyer la photo</button>
+      </form>
+    </section>
+
+    {% if prop.status.value != 'sold' %}
+    <section class="panel" aria-labelledby="status-title">
+      <h2 id="status-title" class="h3">Statut</h2>
+      <form method="post" action="/back-office/biens/{{ prop.id }}/statut" class="btn-row">
+        <label for="status" class="visually-hidden">Nouveau statut</label>
+        <select id="status" name="status">
+          <option value="available" {% if prop.status.value == 'available' %}selected{% endif %}>Disponible</option>
+          <option value="under_offer" {% if prop.status.value == 'under_offer' %}selected{% endif %}>Sous offre</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" type="submit">Changer</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section class="panel" id="vente" aria-labelledby="sale-title">
+      <h2 id="sale-title" class="h3">Offres et vente</h2>
+      {% if sale %}
+        <p>Vendu le <strong>{{ sale.signed_at|date_fr }}</strong> pour <strong>{{ sale.final_price|euros }}</strong>.</p>
+      {% else %}
+        {% if offers %}
+          <ul class="list-cards">
+          {% for o in offers %}
+            <li class="list-card small">
+              <div>{{ o.client.first_name }} {{ o.client.last_name }} · <strong>{{ o.amount|euros }}</strong> <span class="badge badge-{{ o.status.value }}">{{ o.status|label }}</span></div>
+              {% if o.status.value == 'pending' %}
+              <div class="btn-row">
+                <form method="post" action="/back-office/offres/{{ o.id }}/accepter"><input type="hidden" name="back" value="/back-office/biens/{{ prop.id }}#vente"><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l’offre de {{ o.amount|euros }}</span></button></form>
+                <form method="post" action="/back-office/offres/{{ o.id }}/refuser"><input type="hidden" name="back" value="/back-office/biens/{{ prop.id }}#vente"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l’offre de {{ o.amount|euros }}</span></button></form>
+              </div>
+              {% endif %}
+            </li>
+          {% endfor %}
+          </ul>
+        {% else %}<p class="muted">Aucune offre reçue.</p>{% endif %}
+        {% if offers|selectattr('status.value', 'equalto', 'accepted')|list %}
+          <form method="post" action="/back-office/biens/{{ prop.id }}/vente">
+            <div class="field"><label for="sale-price">Prix de vente final (€)</label>
+              <span class="hint" id="sale-price-hint">Laisser vide pour reprendre le montant de l’offre acceptée.</span>
+              <input id="sale-price" name="final_price" type="number" min="1" step="100" aria-describedby="sale-price-hint"></div>
+            <div class="field"><label for="sale-date">Date de signature</label>
+              <input id="sale-date" name="signed_at" type="date"></div>
+            <button class="btn btn-block" type="submit">Conclure la vente</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    {% if not sale %}
+    <form method="post" action="/back-office/biens/{{ prop.id }}/supprimer" data-confirm="Supprimer définitivement cette annonce ?">
+      <button class="btn btn-danger btn-sm" type="submit">Supprimer l’annonce</button>
+    </form>
+    {% endif %}
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}
