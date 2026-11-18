@@ -46,12 +46,12 @@ les seuls autorisés ; le pare-feu étant à états, les réponses sont accepté
 | 9 | VLAN 50 (IT) | SRV-AIX-02 | TCP 22 | Administration SSH (clé uniquement) |
 | 10 | VLAN 50 (IT) | SRV-AIX-01 | TCP 3389 | Bureau à distance (NLA) |
 | 11 | VLAN 50 (IT) | VLAN 99, interfaces d'admin des pare-feu (tous sites, via VPN) | TCP 22, 443 | Administration réseau |
-| 12 | NAS-AIX-01 | SRV-AIX-01, SRV-AIX-02 | selon l'outil de sauvegarde | Sauvegardes (détail dans le plan de sauvegarde) |
+| 12 | SRV-AIX-01, SRV-AIX-02 | NAS-AIX-01 `10.0.60.20` | TCP 5510, TCP 10051, UDP/TCP 514 | Agents de sauvegarde et de supervision, journaux (détail dans le [plan de sauvegarde et de supervision](05-plan-sauvegarde-supervision.md), § 4.5) |
 | 13 | VLAN 90 (invités) | Internet | TCP 80, 443 ; UDP/TCP 53 vers un résolveur public | Visiteurs, **toute destination `10.0.0.0/8` refusée** |
 
 Explicitement interdits (règles de refus journalisées, placées avant les autorisations
 larges) :
-- de la DMZ vers le LAN ;
+- de la DMZ vers le LAN (seule exception : la règle 12, vers le NAS et sur ces ports) ;
 - d'un VLAN de pôle vers un autre ;
 - d'une agence vers une autre ;
 - de tout réseau, sauf le VLAN IT, vers les interfaces d'administration ;
@@ -164,7 +164,7 @@ des versions tenu par l'IT.
 ## 11. Sauvegarde et continuité
 
 Résumé, détaillé dans le plan de sauvegarde et de supervision :
-- **Règle 3-2-1** : 3 copies, sur 2 supports, dont 1 hors site. Les copies sont la production, le NAS du siège et un stockage cloud Azure immuable.
+- **Règle 3-2-1** : 3 copies, sur 2 supports, dont 1 hors site. Les copies sont la production, le NAS du siège, puis Azure (versionnage et suppression réversible à 30 jours) et un disque USB conservé déconnecté, hors du siège.
 - **Restauration** : un test de restauration chaque trimestre.
 - **Pare-feu** : configuration exportée à chaque modification.
 
