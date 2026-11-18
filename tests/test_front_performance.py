@@ -1,4 +1,5 @@
-"""Front-end delivery: HTTP caching, compression, SEO metadata, the hero light and the brand arcade."""
+"""Front-end delivery: HTTP caching, compression, SEO metadata, the hero light and the brand
+arcade."""
 
 import json
 import re

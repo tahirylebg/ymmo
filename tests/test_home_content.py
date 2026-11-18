@@ -29,10 +29,12 @@ def test_median_days_to_sell(db, world):
     start = date.today() - timedelta(days=120)
     for prop, days in ((world["flat"], 30), (world["house"], 90), (world["office"], 60)):
         prop.published_at = datetime.combine(start, datetime.min.time())
-        db.add(Transaction(property_id=prop.id, final_price=Decimal("1000"), signed_at=start + timedelta(days=days)))
+        signed_at = start + timedelta(days=days)
+        db.add(Transaction(property_id=prop.id, final_price=Decimal("1000"), signed_at=signed_at))
     db.commit()
     assert repo.median_days_to_sell() == 60
-    # Prices per m² of homes only: 1000/50 = 20 and 1000/140 ≈ 7.1 -> median ≈ 13.6 (office left out)
+    # Prices per m² of homes only: 1000/50 = 20 and 1000/140 ≈ 7.1 -> median ≈ 13.6
+    # (office left out)
     assert repo.market_summary() == {"sales": 3, "median_days": 60, "median_price_m2": 14}
     # Sales older than the window are not counted.
     assert repo.market_summary(window_days=10)["sales"] == 0

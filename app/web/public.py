@@ -49,7 +49,8 @@ def _city_options(db: Session) -> list[SimpleNamespace]:
     not ORM objects, since they outlive the session that read them."""
     global _cities_cache
     if time.monotonic() - _cities_cache[0] > _MARKET_TTL:
-        options = [SimpleNamespace(id=c.id, label=c.label) for c in CityRepository(db).list(limit=500)]
+        cities = CityRepository(db).list(limit=500)
+        options = [SimpleNamespace(id=c.id, label=c.label) for c in cities]
         _cities_cache = (time.monotonic(), options)
     return _cities_cache[1]
 

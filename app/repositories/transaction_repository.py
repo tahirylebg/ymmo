@@ -59,7 +59,11 @@ class TransactionRepository(BaseRepository[Transaction]):
         days = [(r.signed_at - r.published_at.date()).days for r in rows]
         days = [d for d in days if d >= 0]
         homes = {PropertyCategory.APARTMENT, PropertyCategory.HOUSE}
-        prices = [float(r.final_price) / r.surface_m2 for r in rows if r.surface_m2 and r.category in homes]
+        prices = [
+            float(r.final_price) / r.surface_m2
+            for r in rows
+            if r.surface_m2 and r.category in homes
+        ]
         return {
             "sales": len(rows),
             "median_days": round(statistics.median(days)) if days else None,
