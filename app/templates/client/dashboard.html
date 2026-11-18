@@ -14,10 +14,10 @@
   </ul>
 </nav>
 
-<section id="favoris" class="dash-section" aria-labelledby="fav-title">
+<section id="favoris" class="dash-section" data-reveal="fade" aria-labelledby="fav-title">
   <h2 id="fav-title">Mes favoris</h2>
   {% if dashboard.favorites %}
-    <ul class="card-grid" data-stagger>
+    <ul class="card-grid">
       {% for fav in dashboard.favorites %}
         <li>{{ property_card(fav.listing, user, [fav.property_id], back='/mon-espace#favoris') }}</li>
       {% endfor %}
@@ -27,7 +27,7 @@
   {% endif %}
 </section>
 
-<section id="visites" class="dash-section" aria-labelledby="visits-title">
+<section id="visites" class="dash-section" data-reveal="fade" aria-labelledby="visits-title">
   <h2 id="visits-title">Mes visites</h2>
   {% if dashboard.visits %}
     <ul class="list-cards">
@@ -51,7 +51,7 @@
   {% endif %}
 </section>
 
-<section id="offres" class="dash-section" aria-labelledby="offers-title">
+<section id="offres" class="dash-section" data-reveal="fade" aria-labelledby="offers-title">
   <h2 id="offers-title">Mes offres d’achat</h2>
   {% if dashboard.offers %}
     <div class="table-wrap">
@@ -79,7 +79,7 @@
   {% endif %}
 </section>
 
-<section id="estimations" class="dash-section" aria-labelledby="est-title">
+<section id="estimations" class="dash-section" data-reveal="fade" aria-labelledby="est-title">
   <div class="section-head">
     <h2 id="est-title">Mes biens à vendre</h2>
     <a class="btn btn-secondary btn-sm" href="/estimer">Déposer un bien</a>

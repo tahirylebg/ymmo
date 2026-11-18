@@ -36,47 +36,59 @@
     stillMotion.addEventListener?.("change", syncHeader);
   }
 
-  // Lists marked data-stagger reveal their items one after the other (cycle of 6 per row band).
-  document.querySelectorAll("[data-stagger]").forEach((list) => {
-    [...list.children].forEach((item, index) => {
-      item.setAttribute("data-reveal", "");
-      item.style.setProperty("--reveal-i", index % 6);
+  const reduceMotion = stillMotion.matches;
+
+  // Figures count up to their value once, as they come on screen. The final value stays in the
+  // flow as plain, transparent text (screen readers read it, the layout keeps its exact width);
+  // the running number is drawn over it (aria-hidden), then the original text comes back.
+  const countUp = (el) => {
+    const node = [...el.childNodes].find((n) => n.nodeType === 3 && /\d/.test(n.data));
+    const raw = node?.data.match(/\d[\d\s,]*/)?.[0].trim();
+    // A page arriving through a transition shows its figures as they are (motion.js)
+    if (!raw || document.documentElement.classList.contains("vt-settling")) return;
+    const target = parseFloat(raw.replace(/\s/g, "").replace(",", "."));
+    const decimals = (raw.split(",")[1] || "").length;
+    const space = raw.match(/\s/)?.[0] ?? " ";
+    // Same grouping as the source ("1250" stays ungrouped), so the running number keeps its width
+    const format = new Intl.NumberFormat("fr-FR", {
+      minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: /\s/.test(raw),
     });
-  });
-
-  // Cross-document view transition: the clicked listing photo becomes the detail gallery photo
-  // (and the reverse on the way back). Only the photo involved gets the shared name.
-  const detailId = (url) => url && new URL(url).pathname.match(/^\/biens\/(\d+)$/)?.[1];
-  const cardPhoto = (id) => id && document.querySelector(`.property-card a[href="/biens/${id}"]`)
-    ?.closest(".property-card")?.querySelector(".card-media img");
-  const nameDuring = (img, transition) => {
-    if (!img || !transition) return;
-    img.style.viewTransitionName = "listing-photo";
-    transition.finished.finally(() => { img.style.viewTransitionName = ""; });
+    const box = document.createElement("span");
+    box.className = "count";
+    box.innerHTML = '<span class="count-final"></span><span class="count-run" aria-hidden="true"></span>';
+    box.firstChild.textContent = node.data;
+    node.replaceWith(box);
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / 960);
+      const value = format.format(target * (1 - (1 - t) ** 4)).replace(/\s/g, space);
+      box.lastChild.textContent = node.data.replace(raw, value);
+      if (t < 1) requestAnimationFrame(step);
+      else box.replaceWith(node);
+    };
+    requestAnimationFrame(step);
   };
-  window.addEventListener("pageswap", (event) => {
-    nameDuring(cardPhoto(detailId(event.activation?.entry?.url)), event.viewTransition);
-  });
-  window.addEventListener("pagereveal", (event) => {
-    if (!event.viewTransition || !window.navigation?.activation) return;
-    nameDuring(cardPhoto(detailId(navigation.activation.from?.url)), event.viewTransition);
-  });
 
-  // Gentle reveal on scroll; skipped entirely when the user prefers reduced motion.
-  const revealables = document.querySelectorAll("[data-reveal]");
-  const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const reduceMotion = motionQuery.matches;
-  if (revealables.length && "IntersectionObserver" in window && !reduceMotion) {
-    document.documentElement.classList.add("js-reveal");
+  // Reveal on scroll, once (motion.js sets .js-reveal before the first paint, CSS holds the
+  // hidden states). Lists marked data-stagger reveal their items one after the other, by cycles
+  // of 6. Without IntersectionObserver or with reduced motion, nothing is hidden or animated.
+  const root = document.documentElement;
+  document.querySelectorAll("[data-stagger]").forEach((list) => {
+    [...list.children].forEach((item, index) => item.style.setProperty("--reveal-i", index % 6));
+  });
+  if ("IntersectionObserver" in window && !reduceMotion) {
+    root.dataset.motion = "ready";
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
+      entries.forEach(({ isIntersecting, target }) => {
+        if (!isIntersecting) return;
+        observer.unobserve(target);
+        if (target.matches("[data-count]")) countUp(target);
+        else target.classList.add("is-visible");
       });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-    revealables.forEach((el) => observer.observe(el));
+    }, { threshold: 0.15 });
+    document.querySelectorAll("[data-reveal], [data-stagger] > *").forEach((el) => observer.observe(el));
+    document.querySelectorAll(".hero-stats strong, .band-figures dd, .split-figure, .kpis .kpi-value")
+      .forEach((el) => { el.dataset.count = ""; observer.observe(el); });
   }
 
   // Home hero: live light, fetched only after the page has loaded and gone idle, only while the
@@ -182,7 +194,7 @@
       output.classList.add("is-note");
       output.textContent = text;
     };
-    // The amount counts up in 600 ms; screen readers only get the final value.
+    // The amount counts up in 640 ms (--dur-m); screen readers only get the final value.
     const showAmount = (amount) => {
       cancelAnimationFrame(frame);
       if (empty) empty.hidden = true;
@@ -192,13 +204,13 @@
       spoken.textContent = formatter.format(amount);
       const from = shown;
       shown = amount;
-      if (motionQuery.matches) {
+      if (stillMotion.matches) {
         visual.textContent = formatter.format(amount);
         return;
       }
       const start = performance.now();
       const step = (now) => {
-        const t = Math.min(1, (now - start) / 600);
+        const t = Math.min(1, (now - start) / 640);
         const eased = 1 - (1 - t) ** 4;
         visual.textContent = formatter.format(Math.round(from + (amount - from) * eased));
         if (t < 1) frame = requestAnimationFrame(step);

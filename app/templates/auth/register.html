@@ -4,12 +4,12 @@
 {% block description %}Créez votre compte Ymmo gratuit : enregistrez vos biens favoris, demandez des visites et faites des offres en ligne.{% endblock %}
 {% block content %}
 <div class="auth-layout">
-  <aside class="auth-visual" aria-hidden="true">
+  <aside class="auth-visual" aria-hidden="true" data-reveal>
     {{ arches(3) }}
     <blockquote>Un compte pour suivre chaque étape de votre projet immobilier.</blockquote>
     <p>Ymmo · Réseau immobilier</p>
   </aside>
-<div class="form-narrow">
+<div class="form-narrow" data-reveal data-reveal-delay="1">
   <h1>Créer un compte client</h1>
   <p class="muted">Enregistrez vos favoris, demandez des visites, faites des offres et suivez vos démarches.</p>
   {{ form_errors(errors) }}

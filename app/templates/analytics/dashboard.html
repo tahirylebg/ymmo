@@ -22,7 +22,7 @@
   <p class="alert alert-info" role="status">{{ error }}</p>
 {% else %}
 <h2 class="visually-hidden">Indicateurs clés</h2>
-<ul class="kpis" data-stagger>
+<ul class="kpis">
   {% for label_text, value in data.kpis.items() %}
     <li class="kpi"><span class="kpi-value">{{ value }}</span><span class="kpi-label">{{ label_text }}</span></li>
   {% endfor %}
@@ -41,7 +41,7 @@
 </nav>
 
 {% set fc = data.forecast %}
-<section id="previsions" class="dash-section" aria-labelledby="fc-title">
+<section id="previsions" class="dash-section" data-reveal="fade" aria-labelledby="fc-title">
   <h2 id="fc-title">Prévisions à 6 et 12 mois</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -71,7 +71,7 @@
   </div>
 </section>
 
-<section id="zones" class="dash-section" aria-labelledby="zones-title">
+<section id="zones" class="dash-section" data-reveal="fade" aria-labelledby="zones-title">
   <h2 id="zones-title">Zones intéressantes où acheter</h2>
   <p class="muted">Score sur 100 : croissance des prix (45 %), rapidité de vente (25 %), demande en ligne (15 %), prix relatif au département (15 %).</p>
   <div class="chart-grid">
@@ -94,7 +94,7 @@
   </div>
 </section>
 
-<section id="marche" class="dash-section" aria-labelledby="market-title">
+<section id="marche" class="dash-section" data-reveal="fade" aria-labelledby="market-title">
   <h2 id="market-title">Prix moyen au m² par ville</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -116,7 +116,7 @@
   </div>
 </section>
 
-<section id="delais" class="dash-section" aria-labelledby="dur-title">
+<section id="delais" class="dash-section" data-reveal="fade" aria-labelledby="dur-title">
   <h2 id="dur-title">Délai de vente par type de bien</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -138,7 +138,7 @@
   </div>
 </section>
 
-<section id="populaires" class="dash-section" aria-labelledby="pop-title">
+<section id="populaires" class="dash-section" data-reveal="fade" aria-labelledby="pop-title">
   <h2 id="pop-title">Biens les plus populaires</h2>
   <div class="table-wrap">
     <table>
@@ -154,7 +154,7 @@
   </div>
 </section>
 
-<section id="agences" class="dash-section" aria-labelledby="ag-title">
+<section id="agences" class="dash-section" data-reveal="fade" aria-labelledby="ag-title">
   <h2 id="ag-title">Performance des agences</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -176,7 +176,7 @@
   </div>
 </section>
 
-<section id="modele" class="dash-section" aria-labelledby="model-title">
+<section id="modele" class="dash-section" data-reveal="fade" aria-labelledby="model-title">
   <h2 id="model-title">Modèle d’estimation et qualité des données</h2>
   <div class="chart-grid">
     <div class="panel">

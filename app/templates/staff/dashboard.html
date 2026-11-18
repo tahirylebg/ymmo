@@ -14,7 +14,7 @@
 </div>
 
 <h2 class="visually-hidden">Indicateurs clés</h2>
-<ul class="kpis" data-stagger>
+<ul class="kpis">
   <li class="kpi"><span class="kpi-value">{{ board.kpis.available }}</span><span class="kpi-label">biens disponibles</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.under_offer }}</span><span class="kpi-label">sous offre</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.upcoming_visits }}</span><span class="kpi-label">visites à venir</span></li>
@@ -34,7 +34,7 @@
   </ul>
 </nav>
 
-<section id="visites" class="dash-section" aria-labelledby="visits-title">
+<section id="visites" class="dash-section" data-reveal="fade" aria-labelledby="visits-title">
   <h2 id="visits-title">Visites à venir</h2>
   {% if board.visits %}
   <div class="table-wrap">
@@ -64,7 +64,7 @@
   {% else %}<p class="empty">Aucune visite à venir.</p>{% endif %}
 </section>
 
-<section id="offres" class="dash-section" aria-labelledby="offers-title">
+<section id="offres" class="dash-section" data-reveal="fade" aria-labelledby="offers-title">
   <h2 id="offers-title">Offres en attente</h2>
   {% if board.offers %}
   <div class="table-wrap">
@@ -91,7 +91,7 @@
   {% else %}<p class="empty">Aucune offre en attente.</p>{% endif %}
 </section>
 
-<section id="estimations" class="dash-section" aria-labelledby="est-title">
+<section id="estimations" class="dash-section" data-reveal="fade" aria-labelledby="est-title">
   <h2 id="est-title">Demandes d’estimation (biens à rentrer)</h2>
   {% if board.estimations %}
   <ul class="list-cards">
@@ -130,7 +130,7 @@
   {% else %}<p class="empty">Aucune demande en cours.</p>{% endif %}
 </section>
 
-<section id="biens" class="dash-section" aria-labelledby="props-title">
+<section id="biens" class="dash-section" data-reveal="fade" aria-labelledby="props-title">
   <h2 id="props-title">Biens ({{ board.properties|length }}{% if board.properties|length == 100 %}+{% endif %})</h2>
   <div class="table-wrap">
     <table>
@@ -153,7 +153,7 @@
   </div>
 </section>
 
-<section id="ventes" class="dash-section" aria-labelledby="sales-title">
+<section id="ventes" class="dash-section" data-reveal="fade" aria-labelledby="sales-title">
   <h2 id="sales-title">Dernières ventes</h2>
   <div class="table-wrap">
     <table>

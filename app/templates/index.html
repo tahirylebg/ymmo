@@ -84,16 +84,16 @@
   {# Seen through the arch: only the eyebrow, centred; the title and the listings come once the
      opening fills the screen. #}
   <div class="arch-threshold"><p class="eyebrow">À la une, puis les nouveautés</p></div>
-  <div class="lux-head" data-reveal>
+  <div class="lux-head">
     <div>
-      <h2 id="latest-title">Notre sélection</h2>
+      <h2 id="latest-title" data-reveal="mask"><span>Notre sélection</span></h2>
     </div>
-    <a class="link-arrow" href="/biens">Voir tous les biens</a>
+    <a class="link-arrow" href="/biens" data-reveal data-reveal-delay="1">Voir tous les biens</a>
   </div>
-  <ul class="card-grid card-grid-3 card-grid-feature">
+  <ul class="card-grid card-grid-3 card-grid-feature" data-stagger="cards">
     {% for prop in latest %}
       {# The first listing spans two columns and two rows on desktop (~54rem wide) #}
-      <li data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">{{ property_card(prop, user, favorite_ids, back='/',
+      <li>{{ property_card(prop, user, favorite_ids, back='/',
           sizes='(min-width: 64rem) 54rem, (min-width: 40rem) calc(50vw - 4rem), min(calc(100vw - 2rem), 22rem)' if loop.first else None) }}</li>
     {% endfor %}
   </ul>
@@ -101,15 +101,15 @@
 
 <section class="lux-section" aria-labelledby="why-title">
   <div class="split">
-    <div class="split-visual" data-reveal>
+    <div class="split-visual" data-reveal="curtain">
       {{ arches(2) }}
       <p class="split-figure">{{ agencies|length }}</p>
       <p class="split-caption">Agences, un même niveau d’exigence</p>
     </div>
-    <div data-reveal data-reveal-delay="1">
-      <p class="eyebrow">La maison Ymmo</p>
-      <h2 id="why-title">Un accompagnement sur mesure, de la première visite à la signature</h2>
-      <ul class="features">
+    <div>
+      <p class="eyebrow" data-reveal="eyebrow"><span>La maison Ymmo</span></p>
+      <h2 id="why-title" data-reveal="mask"><span>Un accompagnement sur mesure, de la première visite à la signature</span></h2>
+      <ul class="features" data-stagger="rules">
         <li>
           <h3>Une estimation fondée sur les données</h3>
           <p>Votre bien est comparé à des milliers de ventes réelles pour fixer un prix juste, ni surévalué ni bradé.</p>
@@ -138,10 +138,10 @@
     <img src="{{ url_for('static', path='img/hero/beam-1920.webp') }}?v={{ ASSET_VERSION }}" alt="" width="1920" height="1080" loading="lazy" decoding="async">
   </picture>
   <div class="container">
-    <div class="band-copy" data-reveal>
-      <p class="eyebrow">Vendre avec Ymmo</p>
-      <h2 id="sell-title">Combien vaut votre bien aujourd’hui ?</h2>
-      <p>Une première estimation immédiate, puis la visite d’un agent de l’agence la plus proche pour affiner le prix.</p>
+    <div class="band-copy">
+      <p class="eyebrow" data-reveal="eyebrow"><span>Vendre avec Ymmo</span></p>
+      <h2 id="sell-title" data-reveal>Combien vaut votre bien aujourd’hui ?</h2>
+      <p data-reveal data-reveal-delay="1">Une première estimation immédiate, puis la visite d’un agent de l’agence la plus proche pour affiner le prix.</p>
     </div>
     <div class="band-action" data-reveal data-reveal-delay="1">
       <div class="band-panel">
@@ -167,7 +167,7 @@
       </form>
       {% if market.sales %}
       {# Real figures of the network (last 12 months of signed sales) #}
-      <dl class="band-figures">
+      <dl class="band-figures" data-reveal="rule" data-rule="top">
         <div><dt>Ventes sur 12&nbsp;mois</dt><dd>{{ market.sales|number }}</dd></div>
         {% if market.median_price_m2 %}<div><dt>Prix médian au&nbsp;m²</dt><dd>{{ market.median_price_m2|number }}&nbsp;<small>€/m²</small></dd></div>{% endif %}
         {% if market.median_days %}<div><dt>Délai de vente médian</dt><dd>{{ market.median_days }}&nbsp;<small>jours</small></dd></div>{% endif %}
@@ -180,15 +180,15 @@
 </section>
 
 <section class="lux-section" aria-labelledby="agencies-title">
-  <div class="lux-head" data-reveal>
+  <div class="lux-head">
     <div>
-      <p class="eyebrow">Implantations</p>
-      <h2 id="agencies-title">Nos {{ agencies|length }} agences</h2>
+      <p class="eyebrow" data-reveal="eyebrow"><span>Implantations</span></p>
+      <h2 id="agencies-title" data-reveal="mask"><span>Nos {{ agencies|length }} agences</span></h2>
     </div>
   </div>
   <div class="agencies" data-agencies>
   {# Decorative map: the list next to it carries the same links for keyboards and screen readers #}
-  <svg class="agency-map" viewBox="0 0 {{ france_map.WIDTH }} {{ france_map.HEIGHT }}" aria-hidden="true" focusable="false" data-reveal>
+  <svg class="agency-map" viewBox="0 0 {{ france_map.WIDTH }} {{ france_map.HEIGHT }}" aria-hidden="true" focusable="false" data-reveal="fade">
     <path class="agency-map-land" d="{{ france_map.OUTLINE }}"/>
     {% for agency in agencies %}
       {% set x, y = france_map.point(agency.city.latitude, agency.city.longitude) %}
@@ -198,7 +198,7 @@
       </a>
     {% endfor %}
   </svg>
-  <ul class="agency-list" data-reveal>
+  <ul class="agency-list" data-stagger="rules">
     {% for agency in agencies %}
       <li data-agency="{{ agency.id }}">
         <a href="/biens?agency_id={{ agency.id }}">

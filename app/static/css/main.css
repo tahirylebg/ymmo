@@ -143,11 +143,19 @@
   --sticky-top: 6.5rem;
   --max-width: 82rem;
 
-  /* ---------- Motion ---------- */
-  --dur-fast: 180ms;
-  --dur: 320ms;
-  --dur-slow: 900ms;
-  --ease: cubic-bezier(.2, .7, .2, 1);
+  /* ---------- Motion ----------
+     One family of curves, four durations, short distances. Nothing longer than 1.2 s, no
+     rotation, bounce or spring; only transform, opacity and clip-path are animated. */
+  --ease-out: cubic-bezier(.16, 1, .3, 1);      /* entrances: quick, then very soft (expo-out) */
+  --ease-in: cubic-bezier(.7, 0, .84, 0);       /* exits */
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);  /* continuous moves */
+  --dur-xs: 180ms;   /* hover */
+  --dur-s: 320ms;    /* exits, small elements */
+  --dur-m: 640ms;    /* reveals */
+  --dur-l: 960ms;    /* images, large titles */
+  --dur-hero: calc(var(--dur-l) * 1.25);  /* the hero's light coming up: the 1.2 s ceiling */
+  --rise-s: 12px;
+  --rise-m: 24px;
 }
 
 /* ---------- Base ---------- */
@@ -175,7 +183,7 @@ strong { font-weight: 600; }
 ::selection { background: var(--brass-200); color: var(--ink-900); }
 a {
   color: var(--c-accent); text-decoration: underline; text-decoration-thickness: var(--border-w);
-  text-underline-offset: .25em; transition: color var(--dur-fast) var(--ease), text-decoration-color var(--dur-fast) var(--ease);
+  text-underline-offset: .25em; transition: color var(--dur-xs) var(--ease-out), text-decoration-color var(--dur-xs) var(--ease-out);
 }
 a:hover { color: var(--c-heading); }
 :focus-visible { outline: 2px solid var(--c-focus); outline-offset: 3px; }
@@ -220,17 +228,37 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 /* The rule is drawn at its hover length and scaled down: only transform is animated (no layout) */
 .link-arrow::after {
   content: ""; width: 4rem; margin-right: -1.5rem; height: 1px; background: currentColor;
-  transform: scaleX(.625); transform-origin: left; transition: transform var(--dur) var(--ease);
+  transform: scaleX(.625); transform-origin: left; transition: transform var(--dur-s) var(--ease-out);
 }
 .link-arrow:hover { color: var(--c-accent); }
-.link-arrow:hover::after { transform: none; }
+@media (hover: hover) { .link-arrow:hover::after { transform: none; } }
+
+/* Text links (in sentences, lists, tables): a faint rule at rest; on hover a full one draws from
+   the left, and on leaving it goes off to the right (the position flips, only the size moves). */
+@media (hover: hover) {
+  :is(p, li, dd, td, th):not(.site-nav li, .agency-list li, .dash-nav li, .pagination li) > a:not([class]) {
+    text-decoration: none;
+    background:
+      linear-gradient(currentColor, currentColor) 100% 100% / 0 1px no-repeat,
+      linear-gradient(color-mix(in srgb, currentColor 35%, transparent), color-mix(in srgb, currentColor 35%, transparent)) 0 100% / 100% 1px no-repeat;
+    transition: color var(--dur-xs) var(--ease-out), background-size var(--dur-s) var(--ease-out);
+  }
+  :is(p, li, dd, td, th):not(.site-nav li, .agency-list li, .dash-nav li, .pagination li) > a:not([class]):hover {
+    background-position: 0 100%, 0 100%; background-size: 100% 1px, 100% 1px;
+  }
+}
 
 /* ---------- Header / navigation ---------- */
 .site-header {
   background: var(--c-bg); border-bottom: var(--border-hair); position: sticky; top: 0; z-index: 50;
-  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition: background-color var(--dur-s) var(--ease-out), border-color var(--dur-s) var(--ease-out), color var(--dur-s) var(--ease-out), transform var(--dur-s) var(--ease-out);
 }
-.site-header .container > * { transition: transform var(--dur) var(--ease); }
+.site-header .container > * { transition: transform var(--dur-s) var(--ease-out); }
+/* The brass rule drawn under the header while a new page arrives (motion system, below) */
+.site-header::after {
+  content: ""; position: absolute; inset: auto 0 calc(-1 * var(--border-w)); height: var(--border-w);
+  background: var(--brass-500); transform: scaleX(0); transform-origin: left; opacity: 0; pointer-events: none;
+}
 /* Desktop, once scrolled: 80 → 64 px with transforms only (no layout shift). The bar slides up
    by 1rem and its content comes back down by half of it, so it stays centred. */
 @media (min-width: 64rem) {
@@ -264,7 +292,7 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
   justify-content: center; margin-top: var(--space-4);
   background: var(--c-primary); border: var(--border-w) solid var(--c-primary); color: var(--c-on-primary);
 }
-.site-nav a.btn:hover { background: var(--c-primary-hover); border-color: var(--c-primary-hover); color: var(--c-on-primary); }
+.site-nav a.btn:hover { border-color: var(--btn-fill); color: var(--c-on-primary); }
 .nav-user { color: var(--c-muted); font-size: var(--fs-2xs); padding: var(--space-3) 0; }
 
 @media (min-width: 90rem) { .brand-tag { display: inline; } }
@@ -279,9 +307,14 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
   .site-nav a, .site-nav button.link { width: auto; min-height: var(--target); padding: 0; position: relative; font-size: var(--fs-2xs); font-weight: 600; white-space: nowrap; }
   .site-nav a:not(.btn)::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: .6rem; height: 1px; background: currentColor;
-    transform: scaleX(0); transform-origin: right; transition: transform var(--dur) var(--ease);
+    transform: scaleX(0); transform-origin: right; transition: transform var(--dur-s) var(--ease-out);
   }
-  .site-nav a:not(.btn):hover::after, .site-nav a[aria-current="page"]::after { transform: scaleX(1); transform-origin: left; }
+  .site-nav a[aria-current="page"]::after { transform: scaleX(1); transform-origin: left; }
+}
+@media (min-width: 64rem) and (hover: hover) {
+  .site-nav a:not(.btn):hover::after { transform: scaleX(1); transform-origin: left; }
+}
+@media (min-width: 64rem) {
   .site-nav a.btn { margin: 0; min-height: var(--control-h-sm); padding: 0 var(--btn-px-sm); }
   .nav-user { padding: 0 0 0 var(--space-5); border-left: var(--border-hair); white-space: nowrap; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
 }
@@ -306,7 +339,8 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
 .page-home .site-header .site-nav li { border-color: var(--c-dark-rule); }
 .page-home .site-header .nav-user { color: var(--c-on-dark-muted); border-color: var(--c-dark-rule); }
 .page-home .site-header .site-nav a.btn { background: transparent; border-color: currentColor; color: inherit; }
-.page-home .site-header .site-nav a.btn:hover { background: var(--c-on-dark); border-color: var(--c-on-dark); color: var(--c-dark); }
+.page-home .site-header .site-nav a.btn { --btn-fill: var(--c-on-dark); }
+.page-home .site-header .site-nav a.btn:hover { border-color: var(--c-on-dark); color: var(--c-dark); }
 .page-home .site-header.is-scrolled, .page-home .site-header.is-open {
   background: var(--c-dark); border-color: var(--c-dark-rule);
 }
@@ -363,21 +397,31 @@ code { font-size: .9em; background: var(--c-surface); padding: .05em .3em; }
   min-height: var(--control-h); padding: var(--space-2) var(--btn-px); border-radius: 0;
   border: var(--border-w) solid var(--c-primary); background: var(--c-primary); color: var(--c-on-primary);
   font-size: var(--fs-2xs); font-weight: 600; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer;
-  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  position: relative; isolation: isolate; overflow: hidden; --btn-fill: var(--c-primary-hover);
+  transition: color var(--dur-s) var(--ease-out), border-color var(--dur-s) var(--ease-out);
 }
-.btn:hover { background: var(--c-primary-hover); border-color: var(--c-primary-hover); color: var(--c-on-primary); text-decoration: none; }
-.btn:active { background: var(--ink-800); }
+/* The hover colour fills the button from the left (a layer under the label, scaled), and empties
+   to the right on leaving, instead of a dry colour swap. Touch screens get the colour at once. */
+.btn::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--btn-fill);
+  transform: scaleX(0); transform-origin: right; transition: transform var(--dur-s) var(--ease-out);
+}
+.btn:hover { border-color: var(--btn-fill); color: var(--c-on-primary); text-decoration: none; }
+.btn:hover::before, .btn:active::before { transform: none; transform-origin: left; }
+@media (hover: none) { .btn::before { transition: none; } }
+/* Pressed: one step deeper, plain buttons only (:where keeps it below the variants' own fill). */
+.btn:where(:active) { --btn-fill: var(--ink-800); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
-.btn-secondary { background: transparent; color: var(--c-heading); border-color: var(--c-heading); }
-.btn-secondary:hover { background: var(--c-heading); color: var(--c-on-primary); border-color: var(--c-heading); }
-.btn-secondary:active { background: var(--ink-800); }
-.btn-danger { background: var(--c-danger); border-color: var(--c-danger); color: var(--white); }
-.btn-danger:hover { background: var(--c-danger-hover); border-color: var(--c-danger-hover); }
-.btn-ghost { background: transparent; border-color: transparent; color: var(--c-heading); padding-inline: var(--space-3); text-decoration: underline; text-underline-offset: .4em; }
-.btn-ghost:hover { background: transparent; border-color: transparent; color: var(--c-accent); }
-.btn-ghost:active { background: var(--c-accent-soft); }
-.btn-light { background: var(--c-on-dark); border-color: var(--c-on-dark); color: var(--c-dark); }
-.btn-light:hover { background: var(--c-on-dark-accent); border-color: var(--c-on-dark-accent); color: var(--c-dark); }
+.btn:disabled::before, .btn[aria-disabled="true"]::before { content: none; }
+.btn-secondary { background: transparent; color: var(--c-heading); border-color: var(--c-heading); --btn-fill: var(--c-heading); }
+.btn-secondary:hover { color: var(--c-on-primary); border-color: var(--c-heading); }
+.btn-danger { background: var(--c-danger); border-color: var(--c-danger); color: var(--white); --btn-fill: var(--c-danger-hover); }
+.btn-danger:hover { color: var(--white); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--c-heading); padding-inline: var(--space-3); text-decoration: underline; text-underline-offset: .4em; --btn-fill: transparent; }
+.btn-ghost:hover { border-color: transparent; color: var(--c-accent); }
+.btn-ghost:active { --btn-fill: var(--c-accent-soft); }
+.btn-light { background: var(--c-on-dark); border-color: var(--c-on-dark); color: var(--c-dark); --btn-fill: var(--c-on-dark-accent); }
+.btn-light:hover { border-color: var(--c-on-dark-accent); color: var(--c-dark); }
 .btn-sm { min-height: var(--control-h-sm); padding: var(--space-1) var(--btn-px-sm); }
 @media (pointer: coarse) { .btn-sm { min-height: var(--target); } }
 .btn-block { width: 100%; }
@@ -394,19 +438,27 @@ input, select, textarea {
   font: inherit; font-size: var(--fs-md); line-height: var(--lh-snug); color: var(--c-heading); background-color: transparent;
   border: 0; border-bottom: var(--border-control); border-radius: 0;
   padding: 0 var(--space-1); height: var(--control-h); width: 100%; margin: 0;
-  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  transition: border-color var(--dur-xs) var(--ease-out), box-shadow var(--dur-xs) var(--ease-out);
 }
 textarea { height: auto; min-height: 7rem; padding: var(--space-3); resize: vertical; border: var(--border-control); }
 input[type="file"] { height: auto; padding: var(--space-3) 0; }
 input[type="checkbox"], input[type="radio"] { width: 1.125rem; height: 1.125rem; accent-color: var(--c-heading); }
 /* Examples, not values: lighter italic so a filled field never looks pre-filled */
 input::placeholder, textarea::placeholder { color: var(--c-placeholder); opacity: 1; font-style: italic; }
+/* Text fields: a second rule draws itself from the left over the underline when focused */
+input:not([type="checkbox"], [type="radio"], [type="file"]) {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat; background-position: 0 100%; background-size: 0 1px;
+  transition: border-color var(--dur-xs) var(--ease-out), background-size var(--dur-s) var(--ease-out);
+}
+input:not([type="checkbox"], [type="radio"], [type="file"]):focus-visible { background-size: 100% 1px; }
 input:hover, select:hover, textarea:hover { border-color: var(--c-heading); }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none; border-color: var(--c-heading); box-shadow: 0 1px 0 0 var(--c-heading);
   background-color: color-mix(in srgb, var(--c-paper) 70%, transparent);
 }
 textarea:focus-visible { box-shadow: inset 0 0 0 1px var(--c-heading); }
+input:not([type="checkbox"], [type="radio"], [type="file"]):focus-visible { box-shadow: none; }
 input:disabled, select:disabled, textarea:disabled { color: var(--c-muted); cursor: not-allowed; border-bottom-style: dashed; }
 [aria-invalid="true"] { border-color: var(--c-danger); box-shadow: 0 1px 0 0 var(--c-danger); }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
@@ -503,14 +555,14 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* The light rises: the wall starts in half-light, then the sun comes out, like a cloud passing
    (the poster fades in; under reduced motion it is simply there). */
 @media (prefers-reduced-motion: no-preference) {
-  .hero-poster img { animation: light-rise 2.2s cubic-bezier(.2, .7, .2, 1) .15s both; }
+  .hero-poster img { animation: light-rise var(--dur-hero) var(--ease-out) .15s both; }
 }
 @keyframes light-rise { from { opacity: 0; } }
 /* The live light fades in over the poster once its first frame is drawn (hero-light.js); the
    poster then stops being painted under it. */
-.hero-light { opacity: 0; transition: opacity 1.2s var(--ease); }
+.hero-light { opacity: 0; transition: opacity var(--dur-hero) var(--ease-in-out); }
 .hero-backdrop.has-light .hero-light { opacity: 1; }
-.hero-backdrop.has-light .hero-poster { visibility: hidden; transition: visibility 0s 1.2s; }
+.hero-backdrop.has-light .hero-poster { visibility: hidden; transition: visibility 0s var(--dur-hero); }
 /* Dusk: the wall darkens as the page rises over it (scroll-driven, below) */
 .hero-dusk { position: absolute; inset: 0; z-index: 2; background: var(--ink-900); opacity: 0; }
 /* Fine film grain over the poster (the live light draws its own, moving), so its soft gradients
@@ -539,7 +591,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hero-stats li { display: flex; flex-direction: column; gap: var(--space-1); }
 .hero-stats strong { font: 300 clamp(2rem, 1.5rem + 1.5vw, 2.75rem)/1 var(--font-serif); color: var(--c-on-dark); font-variant-numeric: lining-nums tabular-nums; }
 .hero-stats strong small { font-size: .45em; font-weight: 400; color: var(--c-on-dark-muted); }
-.hero-stats span { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-on-dark-muted); }
+.hero-stats li > span { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-on-dark-muted); }
 
 /* Search bar: one elegant line at the foot of the first screen, whole. Its warm, diffuse shadow is the only
    shadow of the site. */
@@ -657,7 +709,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
     /* Meanwhile the sun goes down on the wall (the live light does the same in its shader) */
     .hero { view-timeline: --hero block; }
     .hero-poster img {
-      animation: light-rise 2.2s cubic-bezier(.2, .7, .2, 1) .15s both, sunset linear both;
+      animation: light-rise var(--dur-hero) var(--ease-out) .15s both, sunset linear both;
       animation-timeline: auto, --hero; animation-range: normal, exit 0% exit 100%;
     }
     .hero-dusk { animation: dusk linear both; animation-timeline: --hero; animation-range: exit 20% exit 100%; }
@@ -781,14 +833,16 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .mini-estimate option { color: var(--c-text); background: var(--c-paper); }
 .mini-estimate input::placeholder { color: var(--c-on-dark-muted); }
 .mini-estimate input:hover, .mini-estimate select:hover { border-color: var(--c-on-dark); }
+.mini-estimate select:focus-visible { box-shadow: 0 1px 0 0 var(--c-on-dark); }
 .mini-estimate input:focus-visible, .mini-estimate select:focus-visible {
-  border-color: var(--c-on-dark); box-shadow: 0 1px 0 0 var(--c-on-dark);
+  border-color: var(--c-on-dark);
   background-color: color-mix(in oklab, var(--c-on-dark) 8%, transparent);
   outline: 2px solid var(--c-on-dark-accent); outline-offset: 4px;
 }
 .mini-estimate .btn { grid-column: 1 / -1; justify-self: start; }
-.btn-arrow { display: inline-block; margin-left: var(--space-2); transition: transform var(--dur) var(--ease); }
-.btn:hover .btn-arrow, .btn:focus-visible .btn-arrow { transform: translateX(.35em); }
+.btn-arrow { display: inline-block; margin-left: var(--space-2); transition: transform var(--dur-s) var(--ease-out); }
+.btn:focus-visible .btn-arrow { transform: translateX(4px); }
+@media (hover: hover) { .btn:hover .btn-arrow { transform: translateX(4px); } }
 
 /* Three figures in serif, small-caps labels under them (the label comes first in the markup) */
 .band-figures {
@@ -833,8 +887,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 @media (min-width: 64rem) { .agencies { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-9); } }
 .agency-map { width: 100%; max-width: 28rem; height: auto; justify-self: center; overflow: visible; }
 .agency-map-land { fill: color-mix(in srgb, var(--brass-200) 35%, transparent); stroke: var(--c-line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.agency-dot { fill: var(--brass-500); transition: fill var(--dur-fast) var(--ease); }
-.agency-dot-halo { fill: var(--brass-500); opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.4); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.agency-dot { fill: var(--brass-500); transition: fill var(--dur-xs) var(--ease-out); }
+.agency-dot-halo { fill: var(--brass-500); opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.4); transition: opacity var(--dur-s) var(--ease-out), transform var(--dur-s) var(--ease-out); }
 .agency-map a { cursor: pointer; }
 .agency-map .is-active .agency-dot, .agency-map a:hover .agency-dot { fill: var(--c-accent); }
 .agency-map .is-active .agency-dot-halo, .agency-map a:hover .agency-dot-halo { opacity: .28; transform: scale(1); }
@@ -843,16 +897,17 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 @media (min-width: 40rem) { .agency-list { columns: 2; } }
 .agency-list li { border-bottom: var(--border-hair); break-inside: avoid; }
 .agency-list li.is-active strong { color: var(--c-accent); }
-.agency-list li.is-active .arrow { transform: translateX(.35rem); color: var(--c-accent); }
+.agency-list li.is-active .arrow { transform: translateX(4px); color: var(--c-accent); }
 .agency-list a {
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3);
   padding: var(--space-4) 0; text-decoration: none; color: var(--c-heading);
 }
-.agency-list strong { font: 400 var(--fs-xl)/1.2 var(--font-serif); transition: color var(--dur-fast) var(--ease); }
+.agency-list strong { font: 400 var(--fs-xl)/1.2 var(--font-serif); transition: color var(--dur-xs) var(--ease-out); }
 .agency-list small { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--c-accent); }
-.agency-list .arrow { color: var(--c-muted); transition: transform var(--dur) var(--ease), color var(--dur) var(--ease); }
+.agency-list .arrow { color: var(--c-muted); transition: transform var(--dur-s) var(--ease-out), color var(--dur-s) var(--ease-out); }
 .agency-list a:hover strong { color: var(--c-accent); }
-.agency-list a:hover .arrow { transform: translateX(.35rem); color: var(--c-accent); }
+.agency-list a:hover .arrow { color: var(--c-accent); }
+@media (hover: hover) { .agency-list a:hover .arrow { transform: translateX(4px); } }
 
 /* ---------- Generic sections (dashboards) ---------- */
 .section { padding-block: var(--space-8) 0; counter-increment: section; }
@@ -889,14 +944,9 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 @media (min-width: 64rem) { .card-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .property-card { position: relative; display: flex; flex-direction: column; height: 100%; }
 .card-media { aspect-ratio: 4 / 3; background: var(--c-media); position: relative; overflow: hidden; }
-.card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-slow) var(--ease); }
-.property-card:hover .card-media img { transform: scale(1.04); }
-.card-media::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to top, color-mix(in srgb, var(--ink-900) 22%, transparent), transparent 40%);
-  opacity: 0; transition: opacity var(--dur) var(--ease);
-}
-.property-card:hover .card-media::after { opacity: 1; }
+/* `transform` is the hover zoom, `scale` the reveal's (motion system): they add up */
+.card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-l) var(--ease-out), scale var(--dur-l) var(--ease-out) var(--d, 0s); }
+@media (hover: hover) { .property-card:hover .card-media img { transform: scale(1.04); } }
 .card-media .badge { position: absolute; top: var(--space-4); left: var(--space-4); z-index: 1; }
 /* Empty photo slot: arches line drawing + listing type */
 .placeholder {
@@ -918,11 +968,15 @@ main > .container > h1 { margin-bottom: var(--space-6); }
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
   overflow: hidden;
 }
-.card-title a { color: var(--c-heading); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size var(--dur) var(--ease); }
-.property-card:hover .card-title a { background-size: 100% 1px; }
+.card-title a { color: var(--c-heading); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size var(--dur-s) var(--ease-out); }
+@media (hover: hover) { .property-card:hover .card-title a { background-size: 100% 1px; } }
 .card-title a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
-.property-card:focus-within { outline: 2px solid var(--c-focus); outline-offset: 6px; }
+/* Keyboard focus only: a click must not frame the card (it would show in the page change) */
+.property-card:has(:focus-visible) { outline: 2px solid var(--c-focus); outline-offset: 6px; }
 .property-card .card-title a:focus-visible { outline: none; }
+@supports not selector(:has(*)) {
+  .property-card:focus-within { outline: 2px solid var(--c-focus); outline-offset: 6px; }
+}
 .card-facts {
   display: flex; flex-wrap: nowrap; align-items: center; min-width: 0; overflow: hidden;
   margin: var(--space-1) 0 var(--space-3); padding: 0; list-style: none; white-space: nowrap; font-size: var(--fs-sm); color: var(--c-muted);
@@ -939,9 +993,9 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .icon-btn {
   display: grid; place-items: center; width: var(--target); height: var(--target); border-radius: 50%;
   border: 0; background: color-mix(in srgb, var(--c-paper) 88%, transparent); color: var(--c-heading); cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  transition: background-color var(--dur-xs) var(--ease-out), color var(--dur-xs) var(--ease-out), transform var(--dur-xs) var(--ease-out);
 }
-.icon-btn:hover { background: var(--c-paper); color: var(--c-accent); transform: scale(1.06); }
+.icon-btn:hover { background: var(--c-paper); color: var(--c-accent); }
 .icon-btn svg { width: 1.125rem; stroke-width: 1.5; }
 .icon-btn[aria-pressed="true"] { color: var(--c-accent); }
 .icon-btn[aria-pressed="true"] svg { fill: currentColor; }
@@ -1003,8 +1057,8 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .gallery figure { margin: 0; overflow: hidden; background: var(--c-media); }
 .gallery a { display: block; height: 100%; }
 .gallery a:focus-visible { outline-offset: -3px; }
-.gallery img { width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform var(--dur-slow) var(--ease); }
-.gallery a:hover img { transform: scale(1.03); }
+.gallery img { width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform var(--dur-l) var(--ease-out), scale var(--dur-l) var(--ease-out) var(--d, 0s); }
+@media (hover: hover) { .gallery a:hover img { transform: scale(1.03); } }
 .gallery figure:first-child { grid-column: 1 / -1; }
 .gallery-1 { grid-template-columns: 1fr; }
 .gallery-1 img { aspect-ratio: 16 / 9; }
@@ -1066,7 +1120,7 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .dash-nav a {
   display: inline-flex; align-items: center; min-height: 3.25rem; text-decoration: none; color: var(--c-muted);
   font-weight: 600; font-size: var(--fs-2xs); border-bottom: 1px solid transparent; margin-bottom: calc(-1 * var(--border-w));
-  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  transition: color var(--dur-xs) var(--ease-out), border-color var(--dur-xs) var(--ease-out);
 }
 .dash-nav a:hover { color: var(--c-heading); border-bottom-color: var(--c-heading); }
 
@@ -1077,7 +1131,7 @@ th, td { padding: var(--space-4) var(--space-3); text-align: left; border-bottom
 th:first-child, td:first-child { padding-left: 0; }
 thead th { font-size: .625rem; font-weight: 600; color: var(--c-muted); padding-block: var(--space-3); }
 tbody th { font-weight: 500; }
-tbody tr { transition: background-color var(--dur-fast) var(--ease); }
+tbody tr { transition: background-color var(--dur-xs) var(--ease-out); }
 tbody tr:hover { background: var(--c-row-hover); }
 tbody tr:last-child > * { border-bottom: 0; }
 td.num, th.num { text-align: right; }
@@ -1124,7 +1178,7 @@ td select, td input { height: var(--control-h-sm); }
   flex: 1 1 0; display: flex; align-items: center; justify-content: center; min-width: 0; height: var(--target); padding: 0 var(--space-1);
   border: var(--border-rule); margin-left: -1px; color: var(--c-heading); cursor: pointer; font-variant-numeric: tabular-nums;
   font-size: var(--fs-sm); font-weight: 400; letter-spacing: 0; text-transform: none;
-  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  transition: background-color var(--dur-xs) var(--ease-out), border-color var(--dur-xs) var(--ease-out), color var(--dur-xs) var(--ease-out);
 }
 .pills .pill:first-of-type { margin-left: 0; }
 .pills .pill:hover { border-color: var(--c-heading); position: relative; }
@@ -1132,28 +1186,192 @@ td select, td input { height: var(--control-h-sm); }
 .pill-input:focus-visible + .pill { outline: 2px solid var(--c-focus); outline-offset: 2px; }
 .pill-input:disabled + .pill { opacity: .5; cursor: not-allowed; }
 
-/* Reveal on scroll (enabled by JS only, never hides content without it) */
-.js-reveal [data-reveal] { opacity: 0; transform: translateY(1.5rem); transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease); }
-.js-reveal [data-reveal].is-visible { opacity: 1; transform: none; }
-.js-reveal [data-reveal-delay="1"] { transition-delay: 120ms; }
-/* Lists marked data-stagger: items arrive one after the other (index set by app.js) */
-.js-reveal [data-stagger] > [data-reveal] { transition-delay: calc(var(--reveal-i, 0) * 70ms); }
-.js-reveal [data-reveal-delay="2"] { transition-delay: 240ms; }
+/* =============================================================================
+   Motion system — calm and precise. Tokens in :root (--ease-*, --dur-*, --rise-*).
+   1. Page changes (cross-document view transitions; motion.js names, types and the rule)
+   2. Reveals on scroll, once (app.js adds .is-visible; motion.js sets .js-reveal before the
+      first paint, so nothing is hidden without JS, with reduced motion, or if app.js fails)
+   3. Scroll-linked parallax (only where scroll timelines exist)
+   Only transform, opacity and clip-path move; nothing changes the layout.
+   ============================================================================= */
 
-/* Page changes cross-fade; a listing photo grows into the detail gallery (app.js names it) */
+/* ---------- 1. Page changes ---------- */
+@view-transition { navigation: auto; }
+/* The header and the footer stay put while the page under them changes */
+.site-header { view-transition-name: site-header; }
+.site-footer { view-transition-name: site-footer; }
+/* Clicks go through to the new page while it settles: nothing waits for an animation */
+::view-transition { pointer-events: none; }
+[data-vt="price"] { display: inline-block; }
+
 @media (prefers-reduced-motion: no-preference) {
-  @view-transition { navigation: auto; }
-  ::view-transition-group(root) { animation-duration: 260ms; }
-  ::view-transition-group(listing-photo) { animation-duration: 420ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
-  ::view-transition-old(listing-photo), ::view-transition-new(listing-photo) { height: 100%; object-fit: cover; }
+  ::view-transition-group(site-header), ::view-transition-group(site-footer) {
+    animation-duration: var(--dur-s); animation-timing-function: var(--ease-in-out);
+  }
+  /* The home header (ink) and the others (ivory) differ: the old one leaves quickly, so the
+     two never show doubled */
+  ::view-transition-old(site-header) { animation: vt-fade-out var(--dur-xs) var(--ease-in) both; }
+  ::view-transition-new(site-header) { animation: vt-fade-in var(--dur-s) var(--ease-out) both; }
+  /* The old page fades and lifts a little; the new one rises in, 80 ms before the old is gone */
+  ::view-transition-old(root) { animation: vt-leave var(--dur-s) var(--ease-in) both; }
+  ::view-transition-new(root) { animation: vt-enter var(--dur-m) var(--ease-out) calc(var(--dur-s) - 80ms) both; }
+  /* Going deeper (home → list → listing), the page comes from the right; going back, from the left */
+  html:active-view-transition-type(forward)::view-transition-new(root) { animation-name: vt-enter-forward; }
+  html:active-view-transition-type(back)::view-transition-new(root) { animation-name: vt-enter-back; }
+  /* Filters and sort: only the cards change, in a quick cross-fade (identical pixels stay still) */
+  html:active-view-transition-type(refine)::view-transition-old(root) { animation: vt-fade-out var(--dur-s) var(--ease-in-out) both; }
+  html:active-view-transition-type(refine)::view-transition-new(root) { animation: vt-fade-in var(--dur-s) var(--ease-in-out) both; }
+  /* Card → listing: the photo, the title and the price become the gallery, the h1 and the price
+     of the panel (and back). The one "signature" of the page change. */
+  ::view-transition-group(*.listing) { animation-duration: var(--dur-l); animation-timing-function: var(--ease-out); }
+  ::view-transition-old(*.photo), ::view-transition-new(*.photo) { height: 100%; object-fit: cover; overflow: clip; }
+  /* The brass rule under the header draws itself as the new page arrives, then fades */
+  .vt-arriving .site-header::after { animation: rule-pass var(--dur-l) linear both; }
 }
-.gallery > figure:first-child img { view-transition-name: listing-photo; }
+@media (prefers-reduced-motion: reduce) {
+  /* A plain fade of 120 ms at most, nothing moves */
+  ::view-transition-group(*) { animation: none; }
+  ::view-transition-old(*) { animation: vt-fade-out 120ms linear both; }
+  ::view-transition-new(*) { animation: vt-fade-in 120ms linear both; }
+}
+@keyframes vt-leave { to { opacity: 0; transform: translateY(calc(-1 * var(--rise-s))); } }
+@keyframes vt-enter { from { opacity: 0; transform: translateY(16px); } }
+@keyframes vt-enter-forward { from { opacity: 0; transform: translateX(var(--rise-m)); } }
+@keyframes vt-enter-back { from { opacity: 0; transform: translateX(calc(-1 * var(--rise-m))); } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
+@keyframes rule-pass {
+  0% { opacity: 1; transform: scaleX(0); animation-timing-function: var(--ease-out); }
+  66% { opacity: 1; transform: none; animation-timing-function: var(--ease-in); }
+  100% { opacity: 0; transform: none; }
+}
+
+/* ---------- 2. Reveals on scroll ----------
+   data-reveal=""        fade and rise (--rise-m)          data-reveal="fade"     fade only (dashboards)
+   data-reveal="mask"    a title rises from behind a line  data-reveal="slide"    from the right (16 px)
+   data-reveal="eyebrow" the brass dash draws, then the words fade in
+   data-reveal="curtain" an image uncovered from the bottom while it settles from 1.08 to 1
+   data-reveal="rule"    the element's hairline draws from the left (data-rule="top" for a top one)
+   data-stagger=""|"facts"|"rules"|"cards" on a list: its items one after the other (70 ms, 50 ms
+   for facts; cycles of 6), "rules" with their bottom hairline, "cards" as a curtain on the photo,
+   the words rising and the rule above the price drawing.
+   An element that takes the focus before its turn is shown at once (:focus-within). */
+/* A page arriving through a transition shows what is on screen at once (motion.js) */
+.vt-settling :is([data-reveal], [data-stagger] > *),
+.vt-settling :is([data-reveal], [data-stagger] > *) *,
+.vt-settling :is([data-reveal], [data-stagger] > *) *::before,
+.vt-settling :is([data-reveal], [data-stagger] > *) *::after,
+.vt-settling :is([data-reveal], [data-stagger] > *)::before,
+.vt-settling :is([data-reveal], [data-stagger] > *)::after { transition: none !important; }
+.js-reveal [data-reveal-delay="1"] { --d: 120ms; }
+.js-reveal [data-reveal-delay="2"] { --d: 240ms; }
+.js-reveal [data-stagger] > * { --d: calc(var(--reveal-i, 0) * var(--stagger-step, 70ms)); }
+.js-reveal [data-stagger="facts"] { --stagger-step: 50ms; }
+
+.js-reveal :is([data-reveal=""], [data-reveal="slide"], [data-stagger=""] > *, [data-stagger="facts"] > *, [data-stagger="rules"] > *) {
+  transition: opacity var(--dur-m) var(--ease-out) var(--d, 0s), transform var(--dur-m) var(--ease-out) var(--d, 0s);
+}
+.js-reveal :is([data-reveal=""], [data-stagger=""] > *, [data-stagger="facts"] > *, [data-stagger="rules"] > *):not(.is-visible, :focus-within) {
+  opacity: 0; transform: translateY(var(--rise-m));
+}
+.js-reveal [data-reveal="slide"]:not(.is-visible, :focus-within) { opacity: 0; transform: translateX(16px); }
+.js-reveal [data-reveal="fade"] { transition: opacity var(--dur-m) var(--ease-out) var(--d, 0s); }
+.js-reveal [data-reveal="fade"]:not(.is-visible, :focus-within) { opacity: 0; }
+
+/* Titles: the words (an inner span) rise .35em into place while a sheet of the page's paper
+   laid over them withdraws downwards, uncovering them from the top. Compositor-only, like the
+   curtain: an animated clip-path would repaint the title on every frame. The sheet reaches a
+   little past the box, so the words rising from below never show under it. On ivory only: over
+   the textured walls (the "Vendre" band) a title simply fades in. */
+[data-reveal="mask"] > span { display: block; }
+.js-reveal [data-reveal="mask"] { position: relative; }
+.js-reveal [data-reveal="mask"] > span { transition: transform var(--dur-l) var(--ease-out) var(--d, 0s); }
+.js-reveal [data-reveal="mask"]::after {
+  content: ""; position: absolute; inset: 0 -.1em -.4em; z-index: 1; pointer-events: none;
+  background: var(--c-bg); transform: scaleY(0); transform-origin: bottom;
+  transition: transform var(--dur-l) var(--ease-out) var(--d, 0s);
+}
+.js-reveal [data-reveal="mask"]:not(.is-visible, :focus-within) > span { transform: translateY(.35em); }
+.js-reveal [data-reveal="mask"]:not(.is-visible, :focus-within)::after { transform: none; }
+
+.js-reveal [data-reveal="eyebrow"]::before { transform-origin: left; transition: transform var(--dur-m) var(--ease-out) var(--d, 0s); }
+.js-reveal [data-reveal="eyebrow"] > span { transition: opacity var(--dur-m) var(--ease-out) calc(var(--d, 0s) + 120ms); }
+.js-reveal [data-reveal="eyebrow"]:not(.is-visible)::before { transform: scaleX(0); }
+.js-reveal [data-reveal="eyebrow"]:not(.is-visible) > span { opacity: 0; }
+
+/* The curtain (images): uncovered from the bottom up while they settle (`scale`: the hover zoom
+   is a `transform`, both add up). The curtain is a sheet of the page's paper that rolls up
+   (scaleY from the top): a compositor-only move. Clipping the image instead (clip-path) would
+   repaint it on every frame, which costs frames on slow phones. */
+.js-reveal :is([data-reveal="curtain"], [data-stagger="cards"] > * .card-media) { position: relative; }
+.js-reveal :is([data-reveal="curtain"], [data-stagger="cards"] > * .card-media)::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--c-bg);
+  transform: scaleY(0); transform-origin: top; transition: transform var(--dur-l) var(--ease-out) var(--d, 0s);
+}
+.js-reveal :is([data-reveal="curtain"], [data-stagger="cards"] > * .card-media) :is(.placeholder, .arches) {
+  transition: scale var(--dur-l) var(--ease-out) var(--d, 0s);
+}
+.js-reveal :is([data-reveal="curtain"]:not(.is-visible, :focus-within), [data-stagger="cards"] > :not(.is-visible, :focus-within) .card-media)::after {
+  transform: none;
+}
+.js-reveal :is([data-reveal="curtain"]:not(.is-visible, :focus-within), [data-stagger="cards"] > :not(.is-visible, :focus-within) .card-media) :is(img, .placeholder, .arches) {
+  scale: 1.08;
+}
+/* Cards: the words rise just after the photo, the favourite button with them */
+.js-reveal [data-stagger="cards"] > * :is(.card-body, .card-fav) {
+  transition: opacity var(--dur-m) var(--ease-out) calc(var(--d, 0s) + 120ms), transform var(--dur-m) var(--ease-out) calc(var(--d, 0s) + 120ms);
+}
+.js-reveal [data-stagger="cards"] > :not(.is-visible, :focus-within) :is(.card-body, .card-fav) { opacity: 0; transform: translateY(var(--rise-m)); }
+
+/* Hairlines that draw themselves: the border gives way to a scaled line laid exactly over it */
+.js-reveal :is([data-reveal="rule"], [data-stagger="rules"] > *, [data-stagger="cards"] .card-price) { position: relative; border-color: transparent; }
+.js-reveal :is([data-reveal="rule"], [data-stagger="rules"] > *, [data-stagger="cards"] .card-price)::after {
+  content: ""; position: absolute; inset: auto 0 calc(-1 * var(--border-w)); height: var(--border-w);
+  background: var(--rule-color, var(--c-line)); transform-origin: left;
+  transition: transform var(--dur-l) var(--ease-out) calc(var(--d, 0s) + var(--rule-delay, 0s));
+}
+.js-reveal :is([data-rule="top"], [data-stagger="cards"] .card-price)::after { inset: calc(-1 * var(--border-w)) 0 auto; }
+.js-reveal [data-stagger="cards"] .card-price { --rule-delay: 240ms; }
+.js-reveal .band-figures { --rule-color: var(--c-dark-rule); }
+.js-reveal :is([data-reveal="rule"]:not(.is-visible), [data-stagger="rules"] > :not(.is-visible), [data-stagger="cards"] > :not(.is-visible) .card-price)::after {
+  transform: scaleX(0);
+}
+
+/* ---------- 3. Parallax (large images only, never text) ----------
+   The image drifts by ±3.5 % of its height (24 px at most) as it crosses the screen, inside a
+   1.08 overscan so no edge ever shows. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .card-grid-feature > li:first-child .card-media img,
+    .gallery > figure:first-child > a,
+    .split-visual .arches {
+      animation: drift linear both; animation-timeline: view(); animation-range: cover;
+    }
+    /* Overscan: the featured photo keeps it (so it skips the curtain's settling), the gallery's
+       link carries it and its photo still settles inside */
+    .card-grid-feature > li:first-child .card-media img, .gallery > figure:first-child > a { scale: 1.08; }
+  }
+}
+@keyframes drift {
+  from { translate: 0 max(-3.5%, -24px); }
+  to { translate: 0 min(3.5%, 24px); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  .js-reveal [data-reveal] { opacity: 1; transform: none; }
 }
+/* Figures counting up (app.js): the final value keeps its place in the flow (transparent, still
+   read), the running number is drawn over it, right-aligned like an odometer */
+.count { position: relative; }
+.count-final { opacity: 0; }
+.count-run { position: absolute; inset: 0; text-align: end; white-space: nowrap; }
 @media print {
   .site-header, .site-footer, .btn, form { display: none !important; }
   body { background: var(--white); }
+  .js-reveal :is([data-reveal], [data-stagger] > *, [data-stagger] > * *),
+  .js-reveal :is([data-reveal], [data-stagger] > *)::before,
+  .js-reveal :is([data-reveal], [data-stagger] > *, [data-stagger] > * *)::after {
+    opacity: 1 !important; transform: none !important; scale: none !important; transition: none !important;
+  }
+  .js-reveal [data-reveal="curtain"]::after, .js-reveal [data-stagger="cards"] .card-media::after, .js-reveal [data-reveal="mask"]::after { content: none !important; }
 }

@@ -4,8 +4,8 @@
 {% block description %}{{ page.total }} bien{{ 's' if page.total != 1 }} à vendre{% if filters.city %} à {{ filters.city }}{% endif %} : appartements, maisons, terrains et locaux professionnels présentés par les agences Ymmo.{% endblock %}
 
 {% block content %}
-<header class="page-head">
-  <p class="eyebrow">Acheter</p>
+<header class="page-head" data-reveal="rule">
+  <p class="eyebrow" data-reveal="eyebrow"><span>Acheter</span></p>
   <h1>Biens à vendre{% if filters.city %} · {{ filters.city }}{% endif %}</h1>
   <p class="lead">Appartements, maisons, terrains et locaux professionnels, présentés par nos agences.</p>
 </header>
@@ -96,7 +96,7 @@
     </div>
 
     {% if page.items %}
-      <ul class="card-grid" data-stagger>
+      <ul class="card-grid" data-stagger="cards">
         {% for prop in page.items %}
           {# The first row is on screen at load: no lazy loading there, the first photo first #}
           <li>{{ property_card(prop, user, favorite_ids, back=request.url.path ~ ('?' ~ request.url.query if request.url.query else ''),
