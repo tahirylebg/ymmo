@@ -72,6 +72,7 @@
   --c-surface: var(--ivory-200);
   --c-paper: var(--ivory-50);
   --c-media: var(--ivory-300);
+  --c-frame: var(--brass-700);   /* photo frames: 1 px brown rule, 5.5:1 on --c-bg */
   --c-heading: var(--ink-900);
   --c-text: var(--ink-700);
   --c-muted: var(--ink-400);
@@ -750,7 +751,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 @media (min-width: 64rem) {
   .card-grid-feature { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .card-grid-feature > li:first-child { grid-column: span 2; grid-row: span 2; }
-  .card-grid-feature > li:first-child .card-media { aspect-ratio: auto; flex: 1; min-height: 28rem; }
+  .card-grid-feature > li:first-child .card-media { aspect-ratio: auto; flex: 1; min-height: 28rem; --mat: 12px; }
   .card-grid-feature > li:first-child .card-body { flex: none; }
   .card-grid-feature > li:first-child .card-price { font-size: 2rem; }
   .card-grid-feature > li:first-child .card-title { font-size: 1.75rem; }
@@ -957,7 +958,23 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 }
 @media (min-width: 64rem) { .card-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .property-card { position: relative; display: flex; flex-direction: column; height: 100%; }
-.card-media { aspect-ratio: 4 / 3; background: var(--c-media); position: relative; overflow: hidden; }
+/* Photos are framed prints: an ivory mat (--mat) and a 1 px brown rule around it, both part of the
+   photo box (a paper border, the rule drawn by border-image on its outer pixel): the box's clip
+   stops at the mat, so the slow zoom stays inside it, and the page-change snapshot carries the
+   whole frame. object-fit keeps the photos' ratio. Hover: the rule turns ink. No shadow. */
+@property --frame { syntax: "<color>"; inherits: false; initial-value: #7b5e36; }
+.card-media, .gallery figure {
+  --mat: 8px; --frame: var(--c-frame);
+  border: calc(var(--mat) + 1px) solid transparent;
+  border-image: linear-gradient(var(--frame), var(--frame)) 1 / 1px;
+  background: linear-gradient(var(--c-media) 0 0) padding-box, var(--c-paper);
+  transition: --frame var(--dur-s) var(--ease-out);
+}
+@media (max-width: 40rem) { .card-media, .gallery figure { --mat: 6px; } }
+@media (hover: hover) {
+  .property-card:hover .card-media, .gallery figure:hover { --frame: var(--ink-900); }
+}
+.card-media { aspect-ratio: 4 / 3; position: relative; overflow: hidden; }
 /* `transform` is the hover zoom, `scale` the reveal's (motion system): they add up */
 .card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-l) var(--ease-out), scale var(--dur-l) var(--ease-out) var(--d, 0s); }
 @media (hover: hover) { .property-card:hover .card-media img { transform: scale(1.04); } }
@@ -1068,7 +1085,7 @@ main > .container > h1 { margin-bottom: var(--space-6); }
 .detail-layout article > h2 { font-size: var(--fs-2xl); padding-top: var(--space-5); border-top: var(--border-hair); margin-top: var(--space-8); margin-bottom: var(--space-5); }
 
 .gallery { display: grid; gap: var(--space-2); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: var(--space-6); }
-.gallery figure { margin: 0; overflow: hidden; background: var(--c-media); }
+.gallery figure { margin: 0; overflow: hidden; }
 .gallery a { display: block; height: 100%; }
 .gallery a:focus-visible { outline-offset: -3px; }
 .gallery img { width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform var(--dur-l) var(--ease-out), scale var(--dur-l) var(--ease-out) var(--d, 0s); }
