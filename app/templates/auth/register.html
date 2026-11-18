@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% from "macros.html" import field, form_errors, arches %}
+{% from "macros.html" import field, form_errors, ambiance_photo %}
 {% block title %}Créer un compte{% endblock %}
 {% block description %}Créez votre compte Ymmo gratuit : enregistrez vos biens favoris, demandez des visites et faites des offres en ligne.{% endblock %}
 {% block content %}
 <div class="auth-layout">
   <aside class="auth-visual" aria-hidden="true" data-reveal>
-    {{ arches(3) }}
+    {{ ambiance_photo('(min-width: 75rem) 36rem, 45vw') }}
     <blockquote>Un compte pour suivre chaque étape de votre projet immobilier.</blockquote>
     <p>Ymmo · Réseau immobilier</p>
   </aside>

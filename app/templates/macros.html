@@ -20,6 +20,17 @@
 {# Brand motif: a Mediterranean arcade in true perspective, drawn with hairlines (decorative only).
    Piers with thickness (two strokes), a few voussoirs, entablement and a very light cast shadow.
    The geometry is projected once per bay count in app/web/arcade.py. #}
+{# Dark ambiance panels (login, register, home « La maison Ymmo »): a calm interior, decorative
+   (alt=""), under an ink veil drawn by the panel's CSS. Lazy: the login panel is hidden on phones,
+   so it is never fetched there. CC0, credited in img/interiors/manifest.json. #}
+{% macro ambiance_photo(sizes) -%}
+{%- set base = '/static/img/interiors/ambiance-interior' %}
+<picture class="ambiance-photo">
+  <source type="image/avif" srcset="{{ base }}-640.avif?v={{ ASSET_VERSION }} 640w, {{ base }}-1120.avif?v={{ ASSET_VERSION }} 1120w" sizes="{{ sizes }}">
+  <img src="{{ base }}-1120.webp?v={{ ASSET_VERSION }}" srcset="{{ base }}-640.webp?v={{ ASSET_VERSION }} 640w, {{ base }}-1120.webp?v={{ ASSET_VERSION }} 1120w" sizes="{{ sizes }}" alt="" width="1120" height="1400" loading="lazy" decoding="async">
+</picture>
+{%- endmacro %}
+
 {% macro arches(count=5, cls='arches') -%}
 {%- set d = arcade_paths(count) %}
 <svg class="{{ cls }}" viewBox="0 0 1200 560" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1" preserveAspectRatio="xMidYMax meet">

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import property_card, arches %}
+{% from "macros.html" import property_card, ambiance_photo %}
 {% block title %}Achat et vente de biens immobiliers{% endblock %}
 {% block description %}{{ total_available }} appartements, maisons et locaux professionnels à vendre dans nos {{ agencies|length }} agences en France, estimés à partir des ventes réelles du marché.{% endblock %}
 {% block body_class %}page-home{% endblock %}
@@ -102,7 +102,7 @@
 <section class="lux-section" aria-labelledby="why-title">
   <div class="split">
     <div class="split-visual" data-reveal="curtain">
-      {{ arches(2) }}
+      {{ ambiance_photo('(min-width: 64rem) 36rem, calc(100vw - 2rem)') }}
       <p class="split-figure">{{ agencies|length }}</p>
       <p class="split-caption">Agences, un même niveau d’exigence</p>
     </div>

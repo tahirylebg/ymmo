@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% from "macros.html" import arches %}
+{% from "macros.html" import ambiance_photo %}
 {% block title %}Connexion{% endblock %}
 {% block description %}Connectez-vous à votre espace Ymmo pour retrouver vos favoris, vos demandes de visite et vos offres.{% endblock %}
 {% block content %}
 <div class="auth-layout">
   <aside class="auth-visual" aria-hidden="true" data-reveal>
-    {{ arches(3) }}
+    {{ ambiance_photo('(min-width: 75rem) 36rem, 45vw') }}
     <blockquote>Retrouvez vos favoris, vos visites et vos offres en un seul endroit.</blockquote>
     <p>Ymmo · Réseau immobilier</p>
   </aside>
