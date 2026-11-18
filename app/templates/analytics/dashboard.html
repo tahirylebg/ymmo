@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Analyses et prévisions{% endblock %}
+{% block description %}Analyses Ymmo : prévisions de ventes, tendance des prix au m², score d’opportunité des zones et performance des agences.{% endblock %}
 {% block content %}
-<nav class="breadcrumb" aria-label="Fil d'Ariane">
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
   <ol><li><a href="/back-office">Back-office</a></li><li aria-current="page">Analyses</li></ol>
 </nav>
 <div class="section-head">
@@ -40,7 +41,7 @@
 </nav>
 
 {% set fc = data.forecast %}
-<section id="previsions" class="dash-section" aria-labelledby="fc-title">
+<section id="previsions" class="dash-section" data-reveal="fade" aria-labelledby="fc-title">
   <h2 id="fc-title">Prévisions à 6 et 12 mois</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -70,22 +71,22 @@
   </div>
 </section>
 
-<section id="zones" class="dash-section" aria-labelledby="zones-title">
+<section id="zones" class="dash-section" data-reveal="fade" aria-labelledby="zones-title">
   <h2 id="zones-title">Zones intéressantes où acheter</h2>
   <p class="muted">Score sur 100 : croissance des prix (45 %), rapidité de vente (25 %), demande en ligne (15 %), prix relatif au département (15 %).</p>
   <div class="chart-grid">
     <figure class="chart">
       <figcaption>Top 10 des zones</figcaption>
-      <img src="/api/analytics/charts/zones.svg" alt="Classement des zones par score d'opportunité, détaillé dans le tableau." width="800" height="480" loading="lazy">
+      <img src="/api/analytics/charts/zones.svg" alt="Classement des zones par score d’opportunité, détaillé dans le tableau." width="800" height="480" loading="lazy">
     </figure>
     <div class="table-wrap">
       <table>
-        <caption class="visually-hidden">Score d'opportunité par ville</caption>
+        <caption class="visually-hidden">Score d’opportunité par ville</caption>
         <thead><tr><th scope="col">Ville</th><th scope="col" class="num">Score</th><th scope="col" class="num">Évolution/an</th><th scope="col" class="num">Délai médian</th><th scope="col" class="num">Prix €/m²</th></tr></thead>
         <tbody>
         {% for z in data.zones.head(15).to_dict('records') %}
           <tr><th scope="row">{{ z.city_key }}</th><td class="num"><strong>{{ z.score|number(0) }}</strong></td>
-            <td class="num">{{ z.growth|signed_percent }}</td><td class="num">{{ z.days_to_sell|number(0) }} j</td><td class="num">{{ z.price_m2|euros }}</td></tr>
+            <td class="num">{{ z.growth|signed_percent }}</td><td class="num">{{ z.days_to_sell|number(0, 'j') }}</td><td class="num">{{ z.price_m2|euros }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -93,7 +94,7 @@
   </div>
 </section>
 
-<section id="marche" class="dash-section" aria-labelledby="market-title">
+<section id="marche" class="dash-section" data-reveal="fade" aria-labelledby="market-title">
   <h2 id="market-title">Prix moyen au m² par ville</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -115,7 +116,7 @@
   </div>
 </section>
 
-<section id="delais" class="dash-section" aria-labelledby="dur-title">
+<section id="delais" class="dash-section" data-reveal="fade" aria-labelledby="dur-title">
   <h2 id="dur-title">Délai de vente par type de bien</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -128,8 +129,8 @@
         <thead><tr><th scope="col">Type</th><th scope="col" class="num">Ventes</th><th scope="col" class="num">Moyenne</th><th scope="col" class="num">Médiane</th><th scope="col" class="num">90 %</th><th scope="col" class="num">Négociation</th></tr></thead>
         <tbody>
         {% for d in data.durations.to_dict('records') %}
-          <tr><th scope="row">{{ d.category|label }}</th><td class="num">{{ d.sales }}</td><td class="num">{{ d.avg_days|number(0) }} j</td>
-            <td class="num">{{ d.median_days|number(0) }} j</td><td class="num">{{ d.p90_days|number(0) }} j</td><td class="num">-{{ d.avg_negotiation_pct|number(1) }} %</td></tr>
+          <tr><th scope="row">{{ d.category|label }}</th><td class="num">{{ d.sales }}</td><td class="num">{{ d.avg_days|number(0, 'j') }}</td>
+            <td class="num">{{ d.median_days|number(0, 'j') }}</td><td class="num">{{ d.p90_days|number(0, 'j') }}</td><td class="num">-{{ d.avg_negotiation_pct|number(1, '%') }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -137,7 +138,7 @@
   </div>
 </section>
 
-<section id="populaires" class="dash-section" aria-labelledby="pop-title">
+<section id="populaires" class="dash-section" data-reveal="fade" aria-labelledby="pop-title">
   <h2 id="pop-title">Biens les plus populaires</h2>
   <div class="table-wrap">
     <table>
@@ -145,7 +146,7 @@
       <thead><tr><th scope="col" class="num">Rang</th><th scope="col">Bien</th><th scope="col">Ville</th><th scope="col" class="num">Vues (30 j)</th><th scope="col" class="num">Favoris</th><th scope="col" class="num">Visites</th><th scope="col" class="num">Offres</th></tr></thead>
       <tbody>
       {% for p in data.popular.to_dict('records') %}
-        <tr><td class="num">{{ p.global_rank }}</td><th scope="row"><a href="/biens/{{ p.property_id }}">{{ p.title }}</a></th><td>{{ p.city }}</td>
+        <tr><td class="num">{{ p.global_rank }}</td><th scope="row"><a href="/biens/{{ p.property_id }}">{{ p.title|typo }}</a></th><td>{{ p.city }}</td>
           <td class="num">{{ p.views_30d }}</td><td class="num">{{ p.favorites_count }}</td><td class="num">{{ p.visits_count }}</td><td class="num">{{ p.offers_count }}</td></tr>
       {% endfor %}
       </tbody>
@@ -153,7 +154,7 @@
   </div>
 </section>
 
-<section id="agences" class="dash-section" aria-labelledby="ag-title">
+<section id="agences" class="dash-section" data-reveal="fade" aria-labelledby="ag-title">
   <h2 id="ag-title">Performance des agences</h2>
   <div class="chart-grid">
     <figure class="chart">
@@ -167,7 +168,7 @@
         <tbody>
         {% for a in data.agencies.to_dict('records') %}
           <tr><td class="num">{{ a.revenue_rank }}</td><th scope="row">{{ a.name }}</th><td class="num">{{ a.sales_count }}</td>
-            <td class="num">{{ a.revenue|euros }}</td><td class="num">{{ a.avg_days_to_sell|number(0) if a.avg_days_to_sell is not none else '—' }} j</td></tr>
+            <td class="num">{{ a.revenue|euros }}</td><td class="num">{{ a.avg_days_to_sell|number(0, 'j') if a.avg_days_to_sell is not none else '—' }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -175,8 +176,8 @@
   </div>
 </section>
 
-<section id="modele" class="dash-section" aria-labelledby="model-title">
-  <h2 id="model-title">Modèle d'estimation et qualité des données</h2>
+<section id="modele" class="dash-section" data-reveal="fade" aria-labelledby="model-title">
+  <h2 id="model-title">Modèle d’estimation et qualité des données</h2>
   <div class="chart-grid">
     <div class="panel">
       <h3 class="h3">Modèle de prix (régression)</h3>
@@ -184,7 +185,7 @@
       {% if m %}
         <ul>
           <li>Entraîné sur {{ m.n_train }} ventes, testé sur {{ m.n_test }} ventes jamais vues.</li>
-          <li>Erreur moyenne : <strong>{{ (m.mape * 100)|number(1) }} %</strong> ({{ m.mae_eur|euros }}), contre {{ (m.baseline_mape * 100)|number(1) }} % pour la méthode manuelle « prix médian au m² de la même catégorie dans la ville × surface ».</li>
+          <li>Erreur moyenne : <strong>{{ (m.mape * 100)|number(1, '%') }}</strong> ({{ m.mae_eur|euros }}), contre {{ (m.baseline_mape * 100)|number(1, '%') }} pour la méthode manuelle « prix médian au m² de la même catégorie dans la ville × surface ».</li>
           <li>R² (échelle log) : {{ m.r2|number(2) }}.</li>
         </ul>
       {% else %}

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import property_card %}
 {% block title %}Mon espace{% endblock %}
+{% block description %}Votre espace client Ymmo : biens favoris, visites, offres et estimations en cours.{% endblock %}
 {% block content %}
 <h1>Bonjour {{ user.first_name }}</h1>
 
@@ -13,7 +14,7 @@
   </ul>
 </nav>
 
-<section id="favoris" class="dash-section" aria-labelledby="fav-title">
+<section id="favoris" class="dash-section" data-reveal="fade" aria-labelledby="fav-title">
   <h2 id="fav-title">Mes favoris</h2>
   {% if dashboard.favorites %}
     <ul class="card-grid">
@@ -22,18 +23,18 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="empty">Aucun favori pour l'instant. <a href="/biens">Parcourir les biens</a></p>
+    <p class="empty">Aucun favori pour l’instant. <a href="/biens">Parcourir les biens</a></p>
   {% endif %}
 </section>
 
-<section id="visites" class="dash-section" aria-labelledby="visits-title">
+<section id="visites" class="dash-section" data-reveal="fade" aria-labelledby="visits-title">
   <h2 id="visits-title">Mes visites</h2>
   {% if dashboard.visits %}
     <ul class="list-cards">
       {% for visit in dashboard.visits %}
         <li class="list-card">
           <div>
-            <h3><a href="/biens/{{ visit.property_id }}">{{ visit.listing.title }}</a></h3>
+            <h3><a href="/biens/{{ visit.property_id }}">{{ visit.listing.title|typo }}</a></h3>
             <p class="muted small">{{ visit.scheduled_at|datetime_fr }}{% if visit.agent %} · avec {{ visit.agent.first_name }} {{ visit.agent.last_name }}{% endif %}</p>
             <span class="badge badge-{{ visit.status.value }}">{{ visit.status|label }}</span>
           </div>
@@ -50,23 +51,23 @@
   {% endif %}
 </section>
 
-<section id="offres" class="dash-section" aria-labelledby="offers-title">
-  <h2 id="offers-title">Mes offres d'achat</h2>
+<section id="offres" class="dash-section" data-reveal="fade" aria-labelledby="offers-title">
+  <h2 id="offers-title">Mes offres d’achat</h2>
   {% if dashboard.offers %}
     <div class="table-wrap">
       <table>
-        <caption class="visually-hidden">Offres d'achat envoyées</caption>
+        <caption class="visually-hidden">Offres d’achat envoyées</caption>
         <thead><tr><th scope="col">Bien</th><th scope="col" class="num">Prix affiché</th><th scope="col" class="num">Mon offre</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
           {% for offer in dashboard.offers %}
           <tr>
-            <th scope="row"><a href="/biens/{{ offer.property_id }}">{{ offer.listing.title }}</a></th>
+            <th scope="row"><a href="/biens/{{ offer.property_id }}">{{ offer.listing.title|typo }}</a></th>
             <td class="num">{{ offer.listing.price|euros }}</td>
             <td class="num">{{ offer.amount|euros }}</td>
             <td><span class="badge badge-{{ offer.status.value }}">{{ offer.status|label }}</span></td>
             <td>{% if offer.status.value == 'pending' %}
               <form method="post" action="/mon-espace/offres/{{ offer.id }}/retirer" data-confirm="Retirer cette offre ?">
-                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l'offre sur {{ offer.listing.title }}</span></button>
+                <button class="btn btn-ghost btn-sm" type="submit">Retirer<span class="visually-hidden"> l’offre sur {{ offer.listing.title|typo }}</span></button>
               </form>{% endif %}</td>
           </tr>
           {% endfor %}
@@ -78,7 +79,7 @@
   {% endif %}
 </section>
 
-<section id="estimations" class="dash-section" aria-labelledby="est-title">
+<section id="estimations" class="dash-section" data-reveal="fade" aria-labelledby="est-title">
   <div class="section-head">
     <h2 id="est-title">Mes biens à vendre</h2>
     <a class="btn btn-secondary btn-sm" href="/estimer">Déposer un bien</a>
@@ -88,16 +89,16 @@
       {% for est in dashboard.estimations %}
         <li class="list-card">
           <div>
-            <h3>{{ est.category|label }} de {{ est.surface_m2|number }} m² · {{ est.city.name }}</h3>
+            <h3>{{ est.category|label }} de {{ est.surface_m2|number(unit='m²') }} · {{ est.city.name }}</h3>
             <p class="muted small">Envoyée le {{ est.created_at|date_fr }} · estimation indicative : <strong>{{ est.estimated_price|euros }}</strong>{% if est.desired_price %} · prix souhaité : {{ est.desired_price|euros }}{% endif %}</p>
             <span class="badge badge-{{ est.status.value }}">{{ est.status|label }}</span>
           </div>
-          {% if est.property_id %}<a class="btn btn-secondary btn-sm" href="/biens/{{ est.property_id }}">Voir l'annonce</a>{% endif %}
+          {% if est.property_id %}<a class="btn btn-secondary btn-sm" href="/biens/{{ est.property_id }}">Voir l’annonce</a>{% endif %}
         </li>
       {% endfor %}
     </ul>
   {% else %}
-    <p class="empty">Vous n'avez pas encore mis de bien en vente.</p>
+    <p class="empty">Vous n’avez pas encore mis de bien en vente.</p>
   {% endif %}
 </section>
 {% endblock %}

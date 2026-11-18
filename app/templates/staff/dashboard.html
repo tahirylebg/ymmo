@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Back-office{% endblock %}
+{% block description %}Back-office Ymmo : gestion des biens, des visites, des offres et des ventes de l’agence.{% endblock %}
 {% block content %}
 <div class="section-head">
   <div>
@@ -18,7 +19,7 @@
   <li class="kpi"><span class="kpi-value">{{ board.kpis.under_offer }}</span><span class="kpi-label">sous offre</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.upcoming_visits }}</span><span class="kpi-label">visites à venir</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.pending_offers }}</span><span class="kpi-label">offres à traiter</span></li>
-  <li class="kpi"><span class="kpi-value">{{ board.kpis.open_estimations }}</span><span class="kpi-label">demandes d'estimation</span></li>
+  <li class="kpi"><span class="kpi-value">{{ board.kpis.open_estimations }}</span><span class="kpi-label">demandes d’estimation</span></li>
   <li class="kpi"><span class="kpi-value">{{ board.kpis.sales_last_12_months }}</span><span class="kpi-label">ventes sur 12 mois</span></li>
   <li class="kpi"><span class="kpi-value">{{ (board.kpis.revenue_last_12_months / 1000000)|number(1) }} M€</span><span class="kpi-label">volume de ventes sur 12 mois</span></li>
 </ul>
@@ -27,13 +28,13 @@
   <ul>
     <li><a href="#visites">Visites</a></li>
     <li><a href="#offres">Offres</a></li>
-    <li><a href="#estimations">Demandes d'estimation</a></li>
+    <li><a href="#estimations">Demandes d’estimation</a></li>
     <li><a href="#biens">Biens</a></li>
     <li><a href="#ventes">Ventes</a></li>
   </ul>
 </nav>
 
-<section id="visites" class="dash-section" aria-labelledby="visits-title">
+<section id="visites" class="dash-section" data-reveal="fade" aria-labelledby="visits-title">
   <h2 id="visits-title">Visites à venir</h2>
   {% if board.visits %}
   <div class="table-wrap">
@@ -63,12 +64,12 @@
   {% else %}<p class="empty">Aucune visite à venir.</p>{% endif %}
 </section>
 
-<section id="offres" class="dash-section" aria-labelledby="offers-title">
+<section id="offres" class="dash-section" data-reveal="fade" aria-labelledby="offers-title">
   <h2 id="offers-title">Offres en attente</h2>
   {% if board.offers %}
   <div class="table-wrap">
     <table>
-      <caption class="visually-hidden">Offres d'achat en attente de réponse</caption>
+      <caption class="visually-hidden">Offres d’achat en attente de réponse</caption>
       <thead><tr><th scope="col">Bien</th><th scope="col">Client</th><th scope="col" class="num">Prix affiché</th><th scope="col" class="num">Offre</th><th scope="col" class="num">Écart</th><th scope="col">Actions</th></tr></thead>
       <tbody>
       {% for o in board.offers %}
@@ -77,10 +78,10 @@
           <td>{{ o.client.first_name }} {{ o.client.last_name }}</td>
           <td class="num">{{ o.listing.price|euros }}</td>
           <td class="num">{{ o.amount|euros }}</td>
-          <td class="num">-{{ (o.discount_rate * 100)|number(1) }} %</td>
+          <td class="num">-{{ (o.discount_rate * 100)|number(1, '%') }}</td>
           <td class="btn-row">
-            <form method="post" action="/back-office/offres/{{ o.id }}/accepter" class="inline-form" data-confirm="Accepter cette offre ? Les autres offres en attente seront refusées."><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l'offre {{ o.id }}</span></button></form>
-            <form method="post" action="/back-office/offres/{{ o.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l'offre {{ o.id }}</span></button></form>
+            <form method="post" action="/back-office/offres/{{ o.id }}/accepter" class="inline-form" data-confirm="Accepter cette offre ? Les autres offres en attente seront refusées."><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l’offre {{ o.id }}</span></button></form>
+            <form method="post" action="/back-office/offres/{{ o.id }}/refuser" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l’offre {{ o.id }}</span></button></form>
           </td>
         </tr>
       {% endfor %}
@@ -90,14 +91,14 @@
   {% else %}<p class="empty">Aucune offre en attente.</p>{% endif %}
 </section>
 
-<section id="estimations" class="dash-section" aria-labelledby="est-title">
-  <h2 id="est-title">Demandes d'estimation (biens à rentrer)</h2>
+<section id="estimations" class="dash-section" data-reveal="fade" aria-labelledby="est-title">
+  <h2 id="est-title">Demandes d’estimation (biens à rentrer)</h2>
   {% if board.estimations %}
   <ul class="list-cards">
     {% for e in board.estimations %}
       <li class="list-card">
         <div>
-          <h3>{{ e.category|label }} de {{ e.surface_m2|number }} m² · {{ e.address }}, {{ e.city.name }}</h3>
+          <h3>{{ e.category|label }} de {{ e.surface_m2|number(unit='m²') }} · {{ e.address }}, {{ e.city.name }}</h3>
           <p class="small muted">{{ e.client.first_name }} {{ e.client.last_name }} · {{ e.client.email }} · le {{ e.created_at|date_fr }}<br>
             Estimation automatique : <strong>{{ e.estimated_price|euros }}</strong>{% if e.desired_price %} · souhait du vendeur : {{ e.desired_price|euros }}{% endif %}</p>
           <span class="badge badge-{{ e.status.value }}">{{ e.status|label }}</span>
@@ -112,13 +113,13 @@
             <details>
               <summary class="btn btn-secondary btn-sm">Mandat signé : publier</summary>
               <form method="post" action="/back-office/estimations/{{ e.id }}/mandat" class="form-card">
-                <div class="field"><label for="m-title-{{ e.id }}">Titre de l'annonce</label>
+                <div class="field"><label for="m-title-{{ e.id }}">Titre de l’annonce</label>
                   <input id="m-title-{{ e.id }}" name="title" required minlength="5" value="{{ e.category|label }} {{ e.surface_m2|int }} m² - {{ e.city.name }}"></div>
                 <div class="field"><label for="m-price-{{ e.id }}">Prix de vente (€)</label>
                   <input id="m-price-{{ e.id }}" name="price" type="number" min="1" step="1000" required value="{{ (e.estimated_price or 0)|int }}"></div>
                 <div class="field"><label for="m-desc-{{ e.id }}">Description</label>
                   <textarea id="m-desc-{{ e.id }}" name="description" rows="3"></textarea></div>
-                <button class="btn btn-sm" type="submit">Publier l'annonce</button>
+                <button class="btn btn-sm" type="submit">Publier l’annonce</button>
               </form>
             </details>
           {% endif %}
@@ -129,7 +130,7 @@
   {% else %}<p class="empty">Aucune demande en cours.</p>{% endif %}
 </section>
 
-<section id="biens" class="dash-section" aria-labelledby="props-title">
+<section id="biens" class="dash-section" data-reveal="fade" aria-labelledby="props-title">
   <h2 id="props-title">Biens ({{ board.properties|length }}{% if board.properties|length == 100 %}+{% endif %})</h2>
   <div class="table-wrap">
     <table>
@@ -139,7 +140,7 @@
       {% for p in board.properties %}
         <tr>
           <th scope="row"><a href="/back-office/biens/{{ p.id }}">{{ p.reference }}</a></th>
-          <td>{{ p.title }}</td>
+          <td>{{ p.title|typo }}</td>
           <td>{{ p.city.name }}</td>
           <td class="num">{{ p.price|euros }}</td>
           <td><span class="badge badge-{{ p.status.value }}">{{ p.status|label }}</span></td>
@@ -152,7 +153,7 @@
   </div>
 </section>
 
-<section id="ventes" class="dash-section" aria-labelledby="sales-title">
+<section id="ventes" class="dash-section" data-reveal="fade" aria-labelledby="sales-title">
   <h2 id="sales-title">Dernières ventes</h2>
   <div class="table-wrap">
     <table>
@@ -162,7 +163,7 @@
       {% for t in board.transactions %}
         <tr>
           <td>{{ t.signed_at|date_fr }}</td>
-          <th scope="row">{{ t.listing.reference }} <span class="muted small">{{ t.listing.title }}</span></th>
+          <th scope="row">{{ t.listing.reference }} <span class="muted small">{{ t.listing.title|typo }}</span></th>
           <td>{% if t.buyer %}{{ t.buyer.first_name }} {{ t.buyer.last_name }}{% else %}—{% endif %}</td>
           <td class="num">{{ t.final_price|euros }}</td>
         </tr>

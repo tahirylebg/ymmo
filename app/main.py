@@ -1,9 +1,9 @@
 """FastAPI application factory."""
 
+import mimetypes
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
@@ -14,7 +14,13 @@ from app.web import auth as web_auth
 from app.web import client as web_client
 from app.web import public as web_public
 from app.web import staff as web_staff
+from app.web.static import CachedStaticFiles, HtmlNoCacheMiddleware, SelectiveGZipMiddleware
 from app.web.templating import templates
+
+# Slim base images ship without woff2/webp entries: fonts and listing photos would be served
+# as text/plain.
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("image/webp", ".webp")
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -37,10 +43,15 @@ def create_app() -> FastAPI:
 
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(OriginCheckMiddleware)
-    app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+    app.add_middleware(HtmlNoCacheMiddleware)
+    # Outermost: compresses the final body (HTML, CSS, JS, SVG, JSON) above ~1 KB.
+    app.add_middleware(SelectiveGZipMiddleware, minimum_size=1000)
+    # Versioned assets (?v=) and fonts: one-year immutable cache (see app.web.static).
+    app.mount("/static", CachedStaticFiles(directory=BASE_DIR / "static"), name="static")
     media_dir = Path(settings.media_dir)
     media_dir.mkdir(parents=True, exist_ok=True)
-    app.mount("/media", StaticFiles(directory=media_dir), name="media")
+    # Photos get unique random file names: they never change once uploaded.
+    app.mount("/media", CachedStaticFiles(directory=media_dir, immutable=True), name="media")
     register_exception_handlers(app, templates)
 
     # REST API (documented in Swagger)

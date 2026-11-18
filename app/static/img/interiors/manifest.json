@@ -1,0 +1,28 @@
+{
+  "estimate-interior": {
+    "files": [
+      "estimate-interior-800.avif",
+      "estimate-interior-800.webp",
+      "estimate-interior-480.avif",
+      "estimate-interior-480.webp"
+    ],
+    "used_on": "/estimer, the « Estimation indicative » panel (4:3 crop)",
+    "title": "Round table in a bright room (Unsplash).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Round_table_in_a_bright_room_(Unsplash).jpg",
+    "author": "Nirzar Pangarkar nirzar",
+    "license": "CC0"
+  },
+  "ambiance-interior": {
+    "files": [
+      "ambiance-interior-1120.avif",
+      "ambiance-interior-1120.webp",
+      "ambiance-interior-640.avif",
+      "ambiance-interior-640.webp"
+    ],
+    "used_on": "dark ambiance panels: login / register (.auth-visual) and « La maison Ymmo » on the home (.split-visual), 4:5 crop",
+    "title": "Take a seat (Unsplash).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Take_a_seat_(Unsplash).jpg",
+    "author": "Sabri Tuzcu sabrituzcu",
+    "license": "CC0"
+  }
+}

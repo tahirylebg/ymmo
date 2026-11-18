@@ -215,7 +215,7 @@ class DemoDataGenerator:
         spec = CATEGORIES[category]
         return (
             f"{spec.label} de {surface:.0f} m² situé à {city.name}"
-            + (f", {rooms} pièces" if rooms else "")
+            + (f", {rooms} pièce{'s' if rooms > 1 else ''}" if rooms else "")
             + ". Proche commerces et transports. Bien présenté par votre agence Ymmo, "
             "visite sur rendez-vous."
         )

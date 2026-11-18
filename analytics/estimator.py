@@ -11,6 +11,7 @@ import pandas as pd
 
 from analytics.predictive import PriceModel
 from app.core.config import get_settings
+from app.models.enums import PropertyCategory
 from app.services.pricing import PriceEstimator, PropertyFeatures, round_price
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,12 @@ class MLPriceEstimator:
             logger.exception("Price model could not be loaded, using the fallback estimator")
             self.model = None
 
+    # Homes are always sold with a room count: the model learned rooms=0 only from land,
+    # warehouses... so a home sent without it would be priced like a plot (e.g. 30 000 €).
+    HOMES = (PropertyCategory.APARTMENT, PropertyCategory.HOUSE)
+
     def estimate(self, features: PropertyFeatures) -> Decimal | None:
-        if self.model is None:
+        if self.model is None or (not features.rooms and features.category in self.HOMES):
             return self.fallback.estimate(features)
         city = features.city
         row = pd.DataFrame(

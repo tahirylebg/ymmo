@@ -1,5 +1,6 @@
 """French formatting helpers shared by templates, reports and exports."""
 
+import re
 from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -20,6 +21,7 @@ MONTHS = [
     "déc.",
 ]
 NBSP = " "  # narrow no-break space used by French typography for thousands
+NBSP_WORD = " "  # no-break space: between a number and its unit ("39 m²", "5 pièces")
 
 LABELS = {
     # property types / categories
@@ -74,10 +76,61 @@ def euros(amount: Decimal | float | int | None, decimals: int = 0) -> str:
     return f"{formatted}{NBSP}€"
 
 
-def number(value: float | int | None, decimals: int = 0) -> str:
+def number(value: float | int | None, decimals: int = 0, unit: str | None = None) -> str:
+    """12345.6 -> '12 346'; with a unit the number never wraps away from it: '39 m²'."""
     if value is None:
         return "—"
-    return f"{float(value):,.{decimals}f}".replace(",", NBSP).replace(".", ",")
+    formatted = f"{float(value):,.{decimals}f}".replace(",", NBSP).replace(".", ",")
+    return f"{formatted}{NBSP_WORD}{unit}" if unit else formatted
+
+
+def rooms(count: int | None) -> str:
+    """3 -> '3 pièces', 1 -> '1 pièce' (no-break space)."""
+    if not count:
+        return "—"
+    return number(count, unit="pièces" if count > 1 else "pièce")
+
+
+# French typography for free text (titles and descriptions typed in the back-office).
+_UNITS = r"(?:m²|m2|€|%|pièces?|chambres?|ha|km|min|ans?)"
+_TYPO_RULES = (
+    (re.compile(r"(\d) +(?=" + _UNITS + r"(?![\w²]))"), r"\g<1>" + NBSP_WORD),  # 39 m², 5 pièces
+    (re.compile(r"(?<=\w) - (?=\w)"), " – "),  # spaced hyphen -> en dash
+    (re.compile(r"(?<=\w)'(?=\w)"), "’"),  # typographic apostrophe
+    # narrow no-break space before ; : ? ! » (only as punctuation: never inside 10:30 or URLs)
+    # (spaces already typed as no-break are replaced, never doubled)
+    (re.compile(r"(?<=[\w)%€»])[   ]*([;:?!»])(?=\s|$)"), NBSP + r"\g<1>"),
+    (re.compile(r"«[   ]*"), "«" + NBSP),
+    # "1 pièces" -> "1 pièce"
+    (re.compile(r"(?<!\d)1" + NBSP_WORD + r"(pièce|chambre)s\b"), "1" + NBSP_WORD + r"\g<1>"),
+)
+
+
+def typo(text: str | None) -> str:
+    """'T2 de 39 m² - Rennes' -> 'T2 de 39 m² – Rennes' (no-break spaces, en dash, ’)."""
+    if not text:
+        return ""
+    for pattern, replacement in _TYPO_RULES:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+def short_title(title: str | None, category=None, city: str | None = None) -> str:
+    """Card title without what the card already shows above it (category and city).
+
+    'Appartement T1 de 28 m² - Schiltigheim' -> 'T1 de 28 m²'; 'Bureaux de 316 m² - Pertuis'
+    -> 'Bureaux de 316 m²' (the category stays when the rest would not stand on its own).
+    """
+    text = (title or "").strip()
+    if city:
+        text = re.sub(rf"\s*[-–—·,]\s*{re.escape(city)}\s*$", "", text, flags=re.IGNORECASE) or text
+    if category is not None:
+        prefix = label(category).lower() + " "
+        rest = text[len(prefix) :]
+        dangling = re.match(r"(de|du|des)\s|d['’]", rest, re.IGNORECASE)  # "de 316 m²" alone
+        if text.lower().startswith(prefix) and rest and not dangling:
+            text = rest[0].upper() + rest[1:]
+    return typo(text)
 
 
 def signed_percent(ratio: float | None, decimals: int = 1) -> str:

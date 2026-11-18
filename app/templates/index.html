@@ -1,12 +1,55 @@
 {% extends "base.html" %}
-{% from "macros.html" import property_card %}
+{% from "macros.html" import property_card, ambiance_photo %}
 {% block title %}Achat et vente de biens immobiliers{% endblock %}
+{% block description %}{{ total_available }} appartements, maisons et locaux professionnels à vendre dans nos {{ agencies|length }} agences en France, estimés à partir des ventes réelles du marché.{% endblock %}
+{% block body_class %}page-home{% endblock %}
 
 {% block hero %}
-<section class="hero" aria-labelledby="hero-title">
+{# The wall: late sun through an arched window on a dark lime wall. With scroll-driven animations it
+   is a stage in front of the page that stays put (sticky) while the words, the figures and the
+   search bar scroll over it; the ivory page is behind it, seen through an arched opening in the
+   wall that rises, then grows until it fills the screen ("we pass under the arch", main.css).
+   The poster (a still of the light, framed for the shape of the screen) is all there is without
+   JS or WebGL, or with reduced motion; the live canvas of hero-light.js takes over from it. #}
+<div class="hero-backdrop" aria-hidden="true">
+  <div class="wall-mover">
+    <div class="wall-mask">
+      <div class="wall-art">
+        <picture class="hero-poster">
+          <source type="image/avif" media="(max-aspect-ratio: 3/5)" srcset="{{ url_for('static', path='img/hero/light-960.avif') }}?v={{ ASSET_VERSION }}">
+          <source type="image/webp" media="(max-aspect-ratio: 3/5)" srcset="{{ url_for('static', path='img/hero/light-960.webp') }}?v={{ ASSET_VERSION }}">
+          <source type="image/avif" media="(max-aspect-ratio: 6/5)" srcset="{{ url_for('static', path='img/hero/light-1200.avif') }}?v={{ ASSET_VERSION }}">
+          <source type="image/webp" media="(max-aspect-ratio: 6/5)" srcset="{{ url_for('static', path='img/hero/light-1200.webp') }}?v={{ ASSET_VERSION }}">
+          <source type="image/avif" srcset="{{ url_for('static', path='img/hero/light-1920.avif') }}?v={{ ASSET_VERSION }}">
+          <img src="{{ url_for('static', path='img/hero/light-1920.webp') }}?v={{ ASSET_VERSION }}" alt="" width="1920" height="1080" decoding="async" fetchpriority="low">
+        </picture>
+        <div class="hero-dusk"></div>
+      </div>
+    </div>
+    {# The opening's edge: daylight spilling on the wall, the depth of the reveal, a brass rule #}
+    <div class="arch-glow"></div>
+    <div class="arch-edge">
+      <svg class="arch-head" viewBox="0 0 200 100" focusable="false"><path d="M.5 100A99.5 99.5 0 0 1 199.5 100" vector-effect="non-scaling-stroke"/></svg>
+      <svg class="arch-jambs" viewBox="0 0 200 100" preserveAspectRatio="none" focusable="false"><path d="M.5 0V100M199.5 0V100" vector-effect="non-scaling-stroke"/></svg>
+    </div>
+  </div>
+</div>
+<section class="hero" aria-labelledby="hero-title"
+         data-light-src="{{ url_for('static', path='js/hero-light.js') }}?v={{ ASSET_VERSION }}">
   <div class="container">
-    <h1 id="hero-title">Trouvez le bien qui vous ressemble, partout en France</h1>
-    <p>{{ total_available }} biens résidentiels et professionnels à vendre dans nos 13 agences, avec une estimation de prix appuyée sur les ventes réelles du marché.</p>
+    <p class="eyebrow">Réseau immobilier · {{ agencies|length }} agences en France</p>
+    <h1 id="hero-title">Des lieux qui vous <em>ressemblent</em>, partout en France</h1>
+    <p class="lead">Appartements, maisons et locaux professionnels, sélectionnés et estimés à partir des ventes réelles du marché.</p>
+
+    <ul class="hero-stats">
+      <li><strong>{{ total_available }}</strong><span>Biens disponibles</span></li>
+      <li><strong>{{ agencies|length }}</strong><span>Agences locales</span></li>
+      {% if median_days %}
+      <li><strong>{{ median_days }}<small>&nbsp;jours</small></strong><span>Délai de vente médian</span></li>
+      {% else %}
+      <li><strong>1</strong><span>Agent dédié par projet</span></li>
+      {% endif %}
+    </ul>
 
     <form class="search-panel" method="get" action="/biens" role="search" aria-label="Rechercher un bien">
       <div class="form-grid">
@@ -23,11 +66,11 @@
         </div>
         <div class="field">
           <label for="q-max">Budget max (€)</label>
-          <input id="q-max" name="max_price" type="number" min="0" step="10000" inputmode="numeric">
+          <input id="q-max" name="max_price" type="number" min="0" step="10000" inputmode="numeric" placeholder="Sans limite">
         </div>
         <div class="field">
           <label for="q-rooms">Pièces min.</label>
-          <input id="q-rooms" name="min_rooms" type="number" min="0" max="20" inputmode="numeric">
+          <input id="q-rooms" name="min_rooms" type="number" min="0" max="20" inputmode="numeric" placeholder="Indifférent">
         </div>
         <button class="btn" type="submit">Rechercher</button>
       </div>
@@ -37,43 +80,135 @@
 {% endblock %}
 
 {% block content %}
-<section class="section" aria-labelledby="latest-title">
-  <div class="section-head">
-    <h2 id="latest-title">Nouveautés</h2>
-    <a href="/biens">Voir tous les biens <span aria-hidden="true">→</span></a>
+<section class="lux-section lux-threshold" aria-labelledby="latest-title">
+  {# Seen through the arch: only the light; the title and the listings come once the opening
+     fills the screen. #}
+  <div class="arch-threshold"></div>
+  <div class="lux-head">
+    <div>
+      <h2 id="latest-title" data-reveal="mask"><span>Notre sélection</span></h2>
+    </div>
+    <a class="link-arrow" href="/biens" data-reveal data-reveal-delay="1">Voir tous les biens</a>
   </div>
-  <ul class="card-grid">
+  <ul class="card-grid card-grid-3 card-grid-feature" data-stagger="cards">
     {% for prop in latest %}
-      <li>{{ property_card(prop, user, favorite_ids, back='/') }}</li>
+      {# The first listing spans two columns and two rows on desktop (~54rem wide) #}
+      <li>{{ property_card(prop, user, favorite_ids, back='/',
+          sizes='(min-width: 64rem) 54rem, (min-width: 40rem) calc(50vw - 4rem), min(calc(100vw - 2rem), 22rem)' if loop.first else None) }}</li>
     {% endfor %}
   </ul>
 </section>
 
-<section class="section" aria-labelledby="why-title">
-  <h2 id="why-title">Pourquoi Ymmo ?</h2>
-  <ul class="features">
-    <li>
-      <h3>Estimation fondée sur les données</h3>
-      <p>Notre modèle compare votre bien à des milliers de ventes réelles pour proposer un prix juste.</p>
-      <a href="/estimer">Estimer mon bien</a>
-    </li>
-    <li>
-      <h3>Un agent dédié</h3>
-      <p>Visites, offres, compromis : votre agent local suit chaque étape et vous tient informé en ligne.</p>
-    </li>
-    <li>
-      <h3>Particuliers et professionnels</h3>
-      <p>Appartements, maisons, terrains, bureaux, locaux commerciaux et entrepôts.</p>
-    </li>
-  </ul>
+<section class="lux-section" aria-labelledby="why-title">
+  <div class="split">
+    <div class="split-visual" data-reveal="curtain">
+      {{ ambiance_photo('(min-width: 64rem) 36rem, calc(100vw - 2rem)') }}
+      <p class="split-figure">{{ agencies|length }}</p>
+      <p class="split-caption">Agences, un même niveau d’exigence</p>
+    </div>
+    <div>
+      <p class="eyebrow" data-reveal="eyebrow"><span>La maison Ymmo</span></p>
+      <h2 id="why-title" data-reveal="mask"><span>Un accompagnement sur mesure, de la première visite à la signature</span></h2>
+      <ul class="features" data-stagger="rules">
+        <li>
+          <h3>Une estimation fondée sur les données</h3>
+          <p>Votre bien est comparé à des milliers de ventes réelles pour fixer un prix juste, ni surévalué ni bradé.</p>
+          <a class="link-arrow" href="/estimer">Estimer mon bien</a>
+        </li>
+        <li>
+          <h3>Un agent dédié</h3>
+          <p>Visites, offres, compromis : votre agent local suit chaque étape et vous tient informé en ligne.</p>
+        </li>
+        <li>
+          <h3>Particuliers et professionnels</h3>
+          <p>Appartements, maisons, terrains, bureaux, locaux commerciaux et entrepôts.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
 </section>
 
-<section class="section" aria-labelledby="agencies-title">
-  <h2 id="agencies-title">Nos {{ agencies|length }} agences</h2>
-  <ul class="agency-list">
+<section class="band band-sell" aria-labelledby="sell-title">
+  {# Decorative: the same dark lime wall as the hero, crossed corner to corner by a long beam of
+     sun (a still of the hero's light, landscape or portrait: no second WebGL context). #}
+  <picture class="band-light" aria-hidden="true">
+    <source type="image/avif" media="(max-aspect-ratio: 3/4)" srcset="{{ url_for('static', path='img/hero/beam-900.avif') }}?v={{ ASSET_VERSION }}">
+    <source type="image/webp" media="(max-aspect-ratio: 3/4)" srcset="{{ url_for('static', path='img/hero/beam-900.webp') }}?v={{ ASSET_VERSION }}">
+    <source type="image/avif" srcset="{{ url_for('static', path='img/hero/beam-1920.avif') }}?v={{ ASSET_VERSION }}">
+    <img src="{{ url_for('static', path='img/hero/beam-1920.webp') }}?v={{ ASSET_VERSION }}" alt="" width="1920" height="1080" loading="lazy" decoding="async">
+  </picture>
+  <div class="container">
+    <div class="band-copy">
+      <p class="eyebrow" data-reveal="eyebrow"><span>Vendre avec Ymmo</span></p>
+      <h2 id="sell-title" data-reveal>Combien vaut votre bien aujourd’hui ?</h2>
+      <p data-reveal data-reveal-delay="1">Une première estimation immédiate, puis la visite d’un agent de l’agence la plus proche pour affiner le prix.</p>
+    </div>
+    <div class="band-action" data-reveal data-reveal-delay="1">
+      <div class="band-panel">
+      <form class="mini-estimate" method="get" action="/estimer" aria-label="Première estimation">
+        <div class="field">
+          <label for="be-city">Ville</label>
+          <select id="be-city" name="city_id">
+            <option value="">Choisir une ville</option>
+            {% for city in cities %}<option value="{{ city.id }}">{{ city.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="be-surface">Surface (m²)</label>
+          <input id="be-surface" name="surface_m2" type="number" min="1" step="0.5" inputmode="decimal" placeholder="85">
+        </div>
+        <div class="field">
+          <label for="be-category">Type de bien</label>
+          <select id="be-category" name="category">
+            {% for c in categories %}<option value="{{ c.value }}">{{ c|label }}</option>{% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-light" type="submit">Estimer mon bien <span class="btn-arrow" aria-hidden="true">→</span></button>
+      </form>
+      {% if market.sales %}
+      {# Real figures of the network (last 12 months of signed sales) #}
+      <dl class="band-figures" data-reveal="rule" data-rule="top">
+        <div><dt>Ventes sur 12&nbsp;mois</dt><dd>{{ market.sales|number }}</dd></div>
+        {% if market.median_price_m2 %}<div><dt>Prix médian au&nbsp;m²</dt><dd>{{ market.median_price_m2|number }}&nbsp;<small>€/m²</small></dd></div>{% endif %}
+        {% if market.median_days %}<div><dt>Délai de vente médian</dt><dd>{{ market.median_days }}&nbsp;<small>jours</small></dd></div>{% endif %}
+      </dl>
+      {% endif %}
+      <a class="link-arrow band-link" href="/estimer">ou faire une estimation détaillée</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lux-section" aria-labelledby="agencies-title">
+  <div class="lux-head">
+    <div>
+      <p class="eyebrow" data-reveal="eyebrow"><span>Implantations</span></p>
+      <h2 id="agencies-title" data-reveal="mask"><span>Nos {{ agencies|length }} agences</span></h2>
+    </div>
+  </div>
+  <div class="agencies" data-agencies>
+  {# Decorative map: the list next to it carries the same links for keyboards and screen readers #}
+  <svg class="agency-map" viewBox="0 0 {{ france_map.WIDTH }} {{ france_map.HEIGHT }}" aria-hidden="true" focusable="false" data-reveal="fade">
+    <path class="agency-map-land" d="{{ france_map.OUTLINE }}"/>
     {% for agency in agencies %}
-      <li><strong>{{ agency.city.name }}</strong>{% if agency.is_headquarters %} (siège){% endif %} · <a href="/biens?agency_id={{ agency.id }}">voir les biens</a></li>
+      {% set x, y = france_map.point(agency.city.latitude, agency.city.longitude) %}
+      <a href="/biens?agency_id={{ agency.id }}" tabindex="-1" data-agency="{{ agency.id }}">
+        <circle class="agency-dot-halo" cx="{{ x }}" cy="{{ y }}" r="11"/>
+        <circle class="agency-dot" cx="{{ x }}" cy="{{ y }}" r="{{ 5 if agency.is_headquarters else 3.5 }}"/>
+      </a>
+    {% endfor %}
+  </svg>
+  <ul class="agency-list" data-stagger="rules">
+    {% for agency in agencies %}
+      <li data-agency="{{ agency.id }}">
+        <a href="/biens?agency_id={{ agency.id }}">
+          <span><strong>{{ agency.city.name }}</strong>{% if agency.is_headquarters %} <small>Siège</small>{% endif %}</span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="visually-hidden">: voir les biens de l’agence</span>
+        </a>
+      </li>
     {% endfor %}
   </ul>
+  </div>
 </section>
 {% endblock %}

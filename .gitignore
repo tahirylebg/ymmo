@@ -33,5 +33,5 @@ Thumbs.db
 # --- Course material & personal notes (not part of the deliverable) ---
 /ProjetFilRB2-2.pdf
 /UF_INFRA + DEV_B2-1.pdf
-/PROMPT_CLAUDE_CLI.md
+/PROMPT_*.md
 /.claude/

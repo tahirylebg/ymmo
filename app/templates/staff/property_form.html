@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 {% from "macros.html" import field, select, form_errors %}
 {% block title %}{{ "Modifier " ~ prop.reference if prop else "Publier un bien" }}{% endblock %}
+{% block description %}Back-office Ymmo : {{ 'modification du bien ' ~ prop.reference if prop else 'publication d’un nouveau bien' }}.{% endblock %}
 {% block content %}
 {% set v = values if values else ({
   'title': prop.title, 'description': prop.description, 'price': prop.price|int,
   'surface_m2': prop.surface_m2, 'rooms': prop.rooms, 'bedrooms': prop.bedrooms if prop.bedrooms is not none else '',
   'address': prop.address, 'latitude': prop.latitude or '', 'longitude': prop.longitude or ''} if prop else {}) %}
 
-<nav class="breadcrumb" aria-label="Fil d'Ariane">
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
   <ol><li><a href="/back-office">Back-office</a></li><li aria-current="page">{{ prop.reference if prop else "Nouveau bien" }}</li></ol>
 </nav>
 
 <div class="section-head">
   <h1>{{ "Bien " ~ prop.reference if prop else "Publier un bien" }}</h1>
   {% if prop %}
-    <p><span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span> · {{ views }} vue{{ 's' if views != 1 }} · <a href="/biens/{{ prop.id }}">voir l'annonce publique</a></p>
+    <p><span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span> · {{ views }} vue{{ 's' if views != 1 }} · <a href="/biens/{{ prop.id }}">voir l’annonce publique</a></p>
   {% endif %}
 </div>
 
@@ -67,7 +68,7 @@
           <span class="hint" id="photo-hint">JPEG, PNG ou WebP, 8 Mo max. Convertie automatiquement en WebP.</span>
           <input id="photo-file" name="file" type="file" accept="image/jpeg,image/png,image/webp" required aria-describedby="photo-hint"></div>
         <div class="field"><label for="photo-alt">Description de la photo</label>
-          <span class="hint" id="alt-hint">Décrivez ce que montre la photo (lu par les lecteurs d'écran).</span>
+          <span class="hint" id="alt-hint">Décrivez ce que montre la photo (lu par les lecteurs d’écran).</span>
           <input id="photo-alt" name="alt_text" maxlength="255" aria-describedby="alt-hint"></div>
         <button class="btn btn-secondary btn-sm" type="submit">Envoyer la photo</button>
       </form>
@@ -99,8 +100,8 @@
               <div>{{ o.client.first_name }} {{ o.client.last_name }} · <strong>{{ o.amount|euros }}</strong> <span class="badge badge-{{ o.status.value }}">{{ o.status|label }}</span></div>
               {% if o.status.value == 'pending' %}
               <div class="btn-row">
-                <form method="post" action="/back-office/offres/{{ o.id }}/accepter"><input type="hidden" name="back" value="/back-office/biens/{{ prop.id }}#vente"><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l'offre de {{ o.amount|euros }}</span></button></form>
-                <form method="post" action="/back-office/offres/{{ o.id }}/refuser"><input type="hidden" name="back" value="/back-office/biens/{{ prop.id }}#vente"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l'offre de {{ o.amount|euros }}</span></button></form>
+                <form method="post" action="/back-office/offres/{{ o.id }}/accepter"><input type="hidden" name="back" value="/back-office/biens/{{ prop.id }}#vente"><button class="btn btn-sm" type="submit">Accepter<span class="visually-hidden"> l’offre de {{ o.amount|euros }}</span></button></form>
+                <form method="post" action="/back-office/offres/{{ o.id }}/refuser"><input type="hidden" name="back" value="/back-office/biens/{{ prop.id }}#vente"><button class="btn btn-ghost btn-sm" type="submit">Refuser<span class="visually-hidden"> l’offre de {{ o.amount|euros }}</span></button></form>
               </div>
               {% endif %}
             </li>
@@ -110,7 +111,7 @@
         {% if offers|selectattr('status.value', 'equalto', 'accepted')|list %}
           <form method="post" action="/back-office/biens/{{ prop.id }}/vente">
             <div class="field"><label for="sale-price">Prix de vente final (€)</label>
-              <span class="hint" id="sale-price-hint">Laisser vide pour reprendre le montant de l'offre acceptée.</span>
+              <span class="hint" id="sale-price-hint">Laisser vide pour reprendre le montant de l’offre acceptée.</span>
               <input id="sale-price" name="final_price" type="number" min="1" step="100" aria-describedby="sale-price-hint"></div>
             <div class="field"><label for="sale-date">Date de signature</label>
               <input id="sale-date" name="signed_at" type="date"></div>
@@ -122,7 +123,7 @@
 
     {% if not sale %}
     <form method="post" action="/back-office/biens/{{ prop.id }}/supprimer" data-confirm="Supprimer définitivement cette annonce ?">
-      <button class="btn btn-danger btn-sm" type="submit">Supprimer l'annonce</button>
+      <button class="btn btn-danger btn-sm" type="submit">Supprimer l’annonce</button>
     </form>
     {% endif %}
   </aside>

@@ -1,10 +1,44 @@
 {% extends "base.html" %}
-{% from "macros.html" import category_icon %}
-{% block title %}{{ prop.title }}{% endblock %}
-{% block description %}{{ prop.title }} · {{ prop.price|euros }} · {{ prop.surface_m2|number }} m² à {{ prop.city.name }}.{% endblock %}
+{% from "macros.html" import photo_alt, no_photo %}
+{% block title %}{{ prop.title|typo }}{% endblock %}
+{% block description %}{{ prop.title|typo }} · {{ prop.price|euros }} · {{ prop.surface_m2|number(unit='m²') }} à {{ prop.city.name }}.{% endblock %}
+{% set base = request.base_url|string %}
+{% block og_image %}{% if prop.photos %}{{ base }}media/{{ prop.photos[0].file_path }}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block head_extra %}
+{#- Structured data (schema.org RealEstateListing), serialised with tojson (HTML-safe). #}
+{%- set availability = {'available': 'InStock', 'under_offer': 'LimitedAvailability'}.get(prop.status.value, 'SoldOut') %}
+{%- set place = {
+  '@type': 'Accommodation' if prop.property_type.value != 'professional' else 'Place',
+  'address': {
+    '@type': 'PostalAddress', 'streetAddress': prop.address, 'postalCode': prop.city.postal_code,
+    'addressLocality': prop.city.name, 'addressCountry': 'FR',
+  },
+} %}
+{%- if prop.property_type.value != 'professional' %}
+  {%- set _ = place.update({'floorSize': {'@type': 'QuantitativeValue', 'value': prop.surface_m2, 'unitCode': 'MTK'}}) %}
+  {%- if prop.rooms %}{% set _ = place.update({'numberOfRooms': prop.rooms}) %}{% endif %}
+{%- endif %}
+{%- set listing = {
+  '@context': 'https://schema.org',
+  '@type': 'RealEstateListing',
+  'name': prop.title,
+  'description': prop.description or (prop.category|label ~ ' à ' ~ prop.city.name),
+  'url': request.url.replace(query='', fragment='')|string,
+  'datePosted': prop.published_at.date().isoformat() if prop.published_at else none,
+  'image': [],
+  'offers': {
+    '@type': 'Offer', 'price': prop.price|float, 'priceCurrency': 'EUR',
+    'availability': 'https://schema.org/' ~ availability,
+  },
+  'about': place,
+} %}
+{%- for photo in prop.photos %}{% set _ = listing.image.append(base ~ 'media/' ~ photo.file_path) %}{% endfor %}
+{%- if not listing.image %}{% set _ = listing.image.append(url_for('static', path='img/og-ymmo.jpg')|string) %}{% endif %}
+<script type="application/ld+json">{{ listing|tojson }}</script>
+{% endblock %}
 
 {% block content %}
-<nav class="breadcrumb" aria-label="Fil d'Ariane">
+<nav class="breadcrumb" aria-label="Fil d’Ariane">
   <ol>
     <li><a href="/">Accueil</a></li>
     <li><a href="/biens">Biens à vendre</a></li>
@@ -13,49 +47,71 @@
   </ol>
 </nav>
 
-<div class="detail-layout">
+<div class="detail-layout" data-listing="{{ prop.id }}">
   <article aria-labelledby="prop-title">
-    <header>
-      <p><span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span> <span class="muted small">Réf. {{ prop.reference }} · publié le {{ prop.published_at|date_fr }}</span></p>
-      <h1 id="prop-title">{{ prop.title }}</h1>
+    <header class="detail-header">
+      <p class="eyebrow" data-reveal="eyebrow"><span>{{ prop.category|label }} · {{ prop.city.name }}</span></p>
+      <h1 id="prop-title" data-vt="title">{{ prop.title|typo }}</h1>
+      <div class="detail-meta">
+        <span class="badge badge-{{ prop.status.value }}">{{ prop.status|label }}</span>
+        <span class="muted small">Réf. {{ prop.reference }} · publié le {{ prop.published_at|date_fr }}</span>
+      </div>
       <p class="muted">{{ prop.address }}, {{ prop.city.postal_code }} {{ prop.city.name }}</p>
     </header>
 
     {% if prop.photos %}
-      <div class="gallery">
+      {% set count = prop.photos|length %}
+      <div class="gallery gallery-{{ [count, 5]|min }}">
         {% for photo in prop.photos %}
-          <figure>
-            <img src="/media/{{ photo.file_path if loop.first else photo.file_path.replace('.webp', '_thumb.webp') }}"
-                 alt="{{ photo.alt_text }}" width="{{ 1600 if loop.first else 640 }}" height="{{ 1200 if loop.first else 480 }}"
-                 {% if not loop.first %}loading="lazy"{% endif %} decoding="async">
+          <figure data-reveal="curtain" {% if loop.first %}data-vt="photo"{% else %}data-reveal-delay="1"{% endif %}>
+            <a href="/media/{{ photo.file_path }}">
+              {% set thumb = '/media/' ~ photo.file_path.replace('.webp', '_thumb.webp') %}
+              {% if loop.first %}
+              {# Main photo (LCP): fetched first; thumbnail on small screens, original elsewhere #}
+              <img src="/media/{{ photo.file_path }}" srcset="{{ thumb }} 640w, /media/{{ photo.file_path }} 1600w"
+                   sizes="(min-width: 64rem) min(53rem, 60vw), calc(100vw - 2rem)"
+                   alt="{{ photo_alt(prop, photo) }}" width="1600" height="1200" fetchpriority="high" decoding="async">
+              {% else %}
+              <img src="{{ thumb }}" alt="{{ photo_alt(prop, photo) }}" width="640" height="480" loading="lazy" decoding="async">
+              {% endif %}
+              <span class="visually-hidden">(agrandir, photo {{ loop.index }} sur {{ count }})</span>
+            </a>
           </figure>
         {% endfor %}
       </div>
     {% else %}
-      <div class="detail-hero-placeholder"><div class="placeholder">{{ category_icon(prop.category) }}</div></div>
+      <div class="detail-hero-placeholder" data-vt="photo" data-reveal="curtain">{{ no_photo(prop) }}</div>
     {% endif %}
 
-    <h2>Caractéristiques</h2>
-    <dl class="facts">
+    <h2 data-reveal="mask"><span>Caractéristiques</span></h2>
+    <dl class="facts" data-stagger="facts">
       <div><dt>Prix</dt><dd>{{ prop.price|euros }}</dd></div>
       <div><dt>Prix au m²</dt><dd>{{ prop.price_per_m2|euros }}</dd></div>
-      <div><dt>Surface</dt><dd>{{ prop.surface_m2|number(1) }} m²</dd></div>
+      <div><dt>Surface</dt><dd>{{ prop.surface_m2|number(1, 'm²') }}</dd></div>
       <div><dt>Type</dt><dd>{{ prop.category|label }}</dd></div>
       {% if prop.rooms %}<div><dt>Pièces</dt><dd>{{ prop.rooms }}</dd></div>{% endif %}
       {% if prop.bedrooms %}<div><dt>Chambres</dt><dd>{{ prop.bedrooms }}</dd></div>{% endif %}
       <div><dt>Usage</dt><dd>{{ prop.property_type|label }}</dd></div>
     </dl>
 
-    <h2>Description</h2>
-    <p>{{ prop.description or "Pas de description pour le moment." }}</p>
+    <h2 data-reveal="mask"><span>Description</span></h2>
+    <p>{{ (prop.description or "Pas de description pour le moment.")|typo }}</p>
   </article>
 
-  <aside class="detail-aside" aria-label="Contact et actions">
+  <aside class="detail-aside" aria-label="Contact et actions" data-reveal="slide">
     <div class="panel">
-      <p class="price-tag">{{ prop.price|euros }}</p>
+      <p class="eyebrow">Prix de vente</p>
+      <p class="price-tag"><span data-vt="price">{{ prop.price|euros }}</span></p>
+      <p class="price-sub">{{ prop.price_per_m2|euros }}/m² · {{ prop.surface_m2|number(unit='m²') }}{% if prop.rooms %} · {{ prop.rooms|rooms }}{% endif %}</p>
       {% if prop.agent %}
-        <p>Votre agent : <strong>{{ prop.agent.full_name }}</strong><br>
-          <a href="mailto:{{ prop.agent.email }}">{{ prop.agent.email }}</a>{% if prop.agent.phone %}<br><a href="tel:{{ prop.agent.phone|replace(' ', '') }}">{{ prop.agent.phone }}</a>{% endif %}</p>
+        <div class="agent-card">
+          <span class="agent-initials" aria-hidden="true">{{ prop.agent.first_name[:1] }}{{ prop.agent.last_name[:1] }}</span>
+          <div>
+            <p class="muted small">Votre agent</p>
+            <p class="agent-name">{{ prop.agent.full_name }}</p>
+            <p class="agent-links"><a href="mailto:{{ prop.agent.email }}">{{ prop.agent.email }}</a>{% if prop.agent.phone %}<br><a href="tel:{{ prop.agent.phone|replace(' ', '') }}">{{ prop.agent.phone }}</a>{% endif %}</p>
+          </div>
+        </div>
       {% endif %}
 
       {% if can_manage %}
@@ -100,7 +156,7 @@
             <label for="offer-msg">Message (facultatif)</label>
             <textarea id="offer-msg" name="message" maxlength="1000" rows="3"></textarea>
           </div>
-          <button class="btn btn-block" type="submit">Envoyer l'offre</button>
+          <button class="btn btn-block" type="submit">Envoyer l’offre</button>
         </form>
       </section>
     {% endif %}

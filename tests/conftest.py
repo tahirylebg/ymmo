@@ -33,6 +33,7 @@ from app.core.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app as fastapi_app  # noqa: E402
 from app.models import Admin, AgencyManager  # noqa: E402
 from app.models.enums import PropertyCategory, PropertyType  # noqa: E402
+from app.web.public import clear_home_caches  # noqa: E402
 from tests.factories import (  # noqa: E402
     make_agency,
     make_agent,
@@ -46,6 +47,7 @@ from tests.factories import (  # noqa: E402
 def _reset_sqlite_schema() -> Iterator[None]:
     """Fresh schema for every test: tests never depend on each other."""
     Base.metadata.create_all(engine)
+    clear_home_caches()  # cached home figures belong to the previous test's database
     yield
     Base.metadata.drop_all(engine)
 
