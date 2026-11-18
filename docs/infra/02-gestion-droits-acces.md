@@ -98,15 +98,21 @@ réseau, imprimante de l'agence, restrictions par profil.
 
 ## 5. Dossiers partagés
 
-Sur SRV-AIX-01, un dossier et un partage par pôle :
+Sur SRV-AIX-01, un dossier par pôle, tous publiés par **un seul partage**,
+`\\SRV-AIX-01\Partages` (`D:\Partages`) :
 
-| Partage | Chemin |
+| Dossier | Chemin réseau |
 |---|---|
-| `\\SRV-AIX-01\Direction` | `D:\Partages\Direction` |
-| `\\SRV-AIX-01\Commercial` | `D:\Partages\Commercial` |
-| `\\SRV-AIX-01\CommMarketing` | `D:\Partages\CommMarketing` |
-| `\\SRV-AIX-01\AdminRH` | `D:\Partages\AdminRH` |
-| `\\SRV-AIX-01\IT` | `D:\Partages\IT` |
+| Direction | `\\SRV-AIX-01\Partages\Direction` |
+| Commercial | `\\SRV-AIX-01\Partages\Commercial` |
+| CommMarketing | `\\SRV-AIX-01\Partages\CommMarketing` |
+| AdminRH | `\\SRV-AIX-01\Partages\AdminRH` |
+| IT | `\\SRV-AIX-01\Partages\IT` |
+
+Pourquoi un seul partage : l'énumération basée sur l'accès masque les dossiers **à
+l'intérieur** d'un partage, pas la liste des partages du serveur. Avec un seul partage,
+un commercial qui ouvre `\\SRV-AIX-01\Partages` ne voit que Commercial et CommMarketing.
+La racine `D:\Partages` est seulement listable : personne ne peut y déposer de fichier.
 
 Les lecteurs réseau sont connectés par GPO (préférences de lecteur, ciblées par groupe
 global). Ce point est détaillé dans le guide de configuration des serveurs.
@@ -118,7 +124,7 @@ global). Ce point est détaillé dans le guide de configuration des serveurs.
 | **Partage (SMB)** | Utilisateurs authentifiés : modifier · Administrateurs : contrôle total. Le filtrage fin est fait par NTFS (une seule source de vérité) |
 | **NTFS** | Héritage coupé sur chaque dossier de pôle. SYSTEM et Administrateurs : contrôle total. `DL_…_RW` : **modification** du contenu (ils créent, modifient, suppriment les fichiers et sous-dossiers, mais ne peuvent ni supprimer ni renommer le dossier du pôle). `DL_…_R` : **lecture et exécution** |
 | **Interdit** | Aucune autorisation, **pas de refus explicite** (Deny) : un refus l'emporte sur tout, et bloquerait par exemple un directeur qui serait aussi dans un autre groupe |
-| **Énumération basée sur l'accès (ABE)** | Activée sur chaque partage : un utilisateur ne voit même pas les dossiers qu'il ne peut pas ouvrir |
+| **Énumération basée sur l'accès (ABE)** | Activée sur le partage : un utilisateur ne voit même pas les dossiers qu'il ne peut pas ouvrir |
 | **Contrôle total** | Jamais donné aux utilisateurs : ils ne peuvent pas modifier les permissions |
 
 ## 6. Comptes d'administration et pôle IT
@@ -150,7 +156,7 @@ domaine, depuis `infra/scripts/` :
 ```powershell
 # 1. OU, groupes globaux et locaux, appartenances de la matrice, comptes de démonstration
 .\01-New-YmmoAdStructure.ps1 -DemoPassword (Read-Host -AsSecureString 'Mot de passe démo')
-# 2. Dossiers, permissions NTFS, partages SMB avec ABE
+# 2. Dossiers, permissions NTFS, partage SMB avec ABE
 .\02-New-YmmoShares.ps1            # -ShareRoot C:\Partages si la VM n'a pas de disque D:
 # 3. Contrôle : affiche la matrice réellement en place, code de sortie 1 en cas d'écart
 .\03-Test-YmmoAccess.ps1

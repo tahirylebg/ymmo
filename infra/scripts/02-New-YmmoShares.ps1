@@ -1,14 +1,16 @@
 #Requires -Modules SmbShare
 <#
 .SYNOPSIS
-    Ymmo - creates the department folders, their NTFS rights and their SMB shares.
+    Ymmo - creates the department folders, their NTFS rights and the SMB share.
 .DESCRIPTION
-    One folder and one share per department under ShareRoot (YmmoAccessMatrix.psd1).
+    One folder per department under ShareRoot (YmmoAccessMatrix.psd1), all published by a
+    single share, \\SRV-AIX-01\Partages: access-based enumeration works inside a share (not on
+    the server's list of shares), so a user browsing it only sees the folders they may open.
     - NTFS does the filtering: inheritance cut on each folder; SYSTEM and Administrators full
       control; DL_<folder>_RW modify (on the content only, so the folder itself cannot be deleted
       or renamed); DL_<folder>_R read. "Forbidden" = no permission at all (no Deny).
-    - Share level: Authenticated Users change, Administrators full; access-based enumeration on,
-      so a user never even sees a folder they cannot open.
+    - The root is only listable by users (this folder only): no file can be dropped there.
+    - Share level: Authenticated Users change, Administrators full; access-based enumeration on.
     Well-known accounts are given by SID: the script works on a French Windows Server too.
     Run on SRV-AIX-01 after 01-New-YmmoAdStructure.ps1. Idempotent (ACLs are rewritten).
 #>
@@ -30,8 +32,21 @@ $inheritOnly = [Security.AccessControl.PropagationFlags]::InheritOnly
 function New-Rule($Identity, [string]$Rights, $Inheritance, $Propagation) {
     New-Object Security.AccessControl.FileSystemAccessRule($Identity, $Rights, $Inheritance, $Propagation, 'Allow')
 }
+function New-ProtectedAcl {
+    $acl = New-Object Security.AccessControl.DirectorySecurity
+    $acl.SetAccessRuleProtection($true, $false)   # cut inheritance, keep nothing inherited
+    $acl.AddAccessRule((New-Rule ([Security.Principal.SecurityIdentifier]$sid.System) 'FullControl' $inherit $noProp))
+    $acl.AddAccessRule((New-Rule ([Security.Principal.SecurityIdentifier]$sid.Admins) 'FullControl' $inherit $noProp))
+    return , $acl
+}
 
+# Root: listable by users, nothing else
 New-Item -ItemType Directory -Path $ShareRoot -Force | Out-Null
+$rootAcl = New-ProtectedAcl
+$rootAcl.AddAccessRule((New-Rule ([Security.Principal.SecurityIdentifier]$sid.AuthUsers) 'ReadAndExecute' $none $noProp))
+Set-Acl -Path $ShareRoot -AclObject $rootAcl
+Write-Host "  NTFS $ShareRoot : racine listable uniquement"
+
 foreach ($folder in $cfg.Folders) {
     $name = $folder.Name
     $path = Join-Path $ShareRoot $name
@@ -39,21 +54,18 @@ foreach ($folder in $cfg.Folders) {
     $rw = New-Object Security.Principal.NTAccount("$($cfg.NetBios)\DL_$($name)_RW")
     $ro = New-Object Security.Principal.NTAccount("$($cfg.NetBios)\DL_$($name)_R")
 
-    $acl = New-Object Security.AccessControl.DirectorySecurity
-    $acl.SetAccessRuleProtection($true, $false)   # cut inheritance, keep nothing from the root
-    $acl.AddAccessRule((New-Rule ([Security.Principal.SecurityIdentifier]$sid.System) 'FullControl' $inherit $noProp))
-    $acl.AddAccessRule((New-Rule ([Security.Principal.SecurityIdentifier]$sid.Admins) 'FullControl' $inherit $noProp))
+    $acl = New-ProtectedAcl
     # Writers: create in the folder, modify everything inside it, but not the folder itself
     $acl.AddAccessRule((New-Rule $rw 'ReadAndExecute, Write' $none $noProp))
     $acl.AddAccessRule((New-Rule $rw 'Modify' $inherit $inheritOnly))
     $acl.AddAccessRule((New-Rule $ro 'ReadAndExecute' $inherit $noProp))
     Set-Acl -Path $path -AclObject $acl
     Write-Host "  NTFS $path : DL_$($name)_RW modification, DL_$($name)_R lecture"
+}
 
-    if (-not (Get-SmbShare -Name $name -ErrorAction SilentlyContinue)) {
-        New-SmbShare -Name $name -Path $path -FolderEnumerationMode AccessBased -CachingMode None `
-            -FullAccess (Get-AccountName $sid.Admins) -ChangeAccess (Get-AccountName $sid.AuthUsers) | Out-Null
-        Write-Host "  + partage \\$env:COMPUTERNAME\$name (ABE)"
-    }
+if (-not (Get-SmbShare -Name 'Partages' -ErrorAction SilentlyContinue)) {
+    New-SmbShare -Name 'Partages' -Path $ShareRoot -FolderEnumerationMode AccessBased -CachingMode None `
+        -FullAccess (Get-AccountName $sid.Admins) -ChangeAccess (Get-AccountName $sid.AuthUsers) | Out-Null
+    Write-Host "  + partage \\$env:COMPUTERNAME\Partages (enumeration basee sur l'acces)"
 }
 Write-Host 'Termine. Verification : .\03-Test-YmmoAccess.ps1'

@@ -41,10 +41,10 @@ foreach ($pole in $cfg.Poles) {
 }
 $rows | Format-Table -AutoSize
 
+$share = Get-SmbShare -Name 'Partages' -ErrorAction SilentlyContinue
+if (-not $share) { $errors++; Write-Warning 'Partage Partages absent' }
+elseif ($share.FolderEnumerationMode -ne 'AccessBased') { $errors++; Write-Warning 'Enumeration basee sur l''acces desactivee' }
 foreach ($folder in $cfg.Folders) {
-    $share = Get-SmbShare -Name $folder.Name -ErrorAction SilentlyContinue
-    if (-not $share) { $errors++; Write-Warning "Partage $($folder.Name) absent" }
-    elseif ($share.FolderEnumerationMode -ne 'AccessBased') { $errors++; Write-Warning "ABE desactive sur $($folder.Name)" }
     if (-not (Get-Acl -Path (Join-Path $ShareRoot $folder.Name)).AreAccessRulesProtected) {
         $errors++; Write-Warning "Heritage NTFS non coupe sur $($folder.Name)"
     }
