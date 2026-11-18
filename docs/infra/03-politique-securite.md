@@ -138,7 +138,9 @@ larges) :
 - **HTTPS**
   - Certificat Let's Encrypt renouvelé automatiquement, TLS 1.2 minimum.
   - HSTS activé une fois le domaine définitif en place.
-- **À ajouter en production** : limitation du nombre de tentatives de connexion, sur le pare-feu ou un proxy inverse (l'application n'en a pas encore).
+- **Tentatives de connexion** :
+  - l'application bloque un couple adresse IP / adresse e-mail après 5 échecs en 15 minutes ;
+  - le compteur est en mémoire, donc propre à chaque instance de l'application. Si la plateforme tourne sur plusieurs instances (montée en charge dans Azure), il faut le déplacer dans un stockage partagé, par exemple Redis.
 
 ## 9. Mises à jour
 
