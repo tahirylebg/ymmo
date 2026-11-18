@@ -91,7 +91,7 @@ connaît HTTP.
 erDiagram
     CITY ||--o{ AGENCY : "située à"
     CITY ||--o{ PROPERTY : "située à"
-    AGENCY ||--o{ USER : "emploie (agents, responsables)"
+    AGENCY ||--o{ USER : "emploie"
     AGENCY ||--o{ PROPERTY : "gère"
     USER ||--o{ PROPERTY : "agent / vendeur"
     PROPERTY ||--o{ PROPERTY_PHOTO : "a"
@@ -201,7 +201,7 @@ sequenceDiagram
     A->>A: vérification Argon2id (hachage factice si l'e-mail est inconnu : temps constant)
     A-->>N: cookie de session = JWT signé (HttpOnly, SameSite=Lax, Secure en production)
     N->>A: requêtes suivantes avec le cookie
-    A->>A: JWT valide et non expiré → utilisateur ; rôle et périmètre vérifiés par le service
+    A->>A: JWT valide et non expiré → utilisateur, rôle et périmètre vérifiés par le service
 ```
 
 - **Mots de passe** : Argon2id. L'empreinte est recalculée à la connexion si les paramètres recommandés changent (`needs_rehash`). Politique : 10 caractères, avec une minuscule, une majuscule et un chiffre.
