@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import field, select, form_errors, arches %}
+{% from "macros.html" import field, select, form_errors %}
 {% block title %}Estimer et vendre mon bien{% endblock %}
 {% block description %}Estimez gratuitement votre bien à partir des ventes réelles du marché, puis confiez sa vente à l’agence Ymmo la plus proche.{% endblock %}
 {% block content %}
@@ -35,10 +35,16 @@
   </form>
 
   <aside class="panel estimate-panel" data-reveal data-reveal-delay="1" aria-labelledby="estimate-result-title">
-    <h2 id="estimate-result-title" class="h3">Estimation indicative</h2>
+    {# A framed interior (decorative), then the label in small capitals over the amount #}
+    <figure class="estimate-photo">
+      <picture>
+        <source type="image/avif" srcset="{{ url_for('static', path='img/interiors/estimate-interior-480.avif') }}?v={{ ASSET_VERSION }} 480w, {{ url_for('static', path='img/interiors/estimate-interior-800.avif') }}?v={{ ASSET_VERSION }} 800w" sizes="(min-width: 64rem) 26rem, calc(100vw - 4rem)">
+        <img src="{{ url_for('static', path='img/interiors/estimate-interior-800.webp') }}?v={{ ASSET_VERSION }}" srcset="{{ url_for('static', path='img/interiors/estimate-interior-480.webp') }}?v={{ ASSET_VERSION }} 480w, {{ url_for('static', path='img/interiors/estimate-interior-800.webp') }}?v={{ ASSET_VERSION }} 800w" sizes="(min-width: 64rem) 26rem, calc(100vw - 4rem)" alt="" width="800" height="600" loading="lazy" decoding="async">
+      </picture>
+    </figure>
+    <h2 id="estimate-result-title" class="estimate-label">Estimation indicative</h2>
     {# Empty state, shown by JS only (the instant estimate needs it) #}
     <div class="estimate-empty" data-estimate-empty hidden>
-      {{ arches(3) }}
       <p>Indiquez la surface, l’adresse et la ville, puis «&nbsp;Estimer maintenant&nbsp;»&nbsp;: le prix s’affiche ici.</p>
     </div>
     <p id="estimate-result" class="price-tag" aria-live="polite" aria-atomic="true"></p>
