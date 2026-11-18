@@ -11,5 +11,5 @@ media
 !docker/certs/*.crt
 reports
 *.pdf
-PROMPT_CLAUDE_CLI.md
+PROMPT_*.md
 .claude
