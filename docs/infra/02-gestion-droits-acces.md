@@ -102,11 +102,11 @@ Sur SRV-AIX-01, un dossier et un partage par pôle :
 
 | Partage | Chemin |
 |---|---|
-| `\SRV-AIX-01\Direction` | `D:\Partages\Direction` |
-| `\SRV-AIX-01\Commercial` | `D:\Partages\Commercial` |
-| `\SRV-AIX-01\CommMarketing` | `D:\Partages\CommMarketing` |
-| `\SRV-AIX-01\AdminRH` | `D:\Partages\AdminRH` |
-| `\SRV-AIX-01\IT` | `D:\Partages\IT` |
+| `\\SRV-AIX-01\Direction` | `D:\Partages\Direction` |
+| `\\SRV-AIX-01\Commercial` | `D:\Partages\Commercial` |
+| `\\SRV-AIX-01\CommMarketing` | `D:\Partages\CommMarketing` |
+| `\\SRV-AIX-01\AdminRH` | `D:\Partages\AdminRH` |
+| `\\SRV-AIX-01\IT` | `D:\Partages\IT` |
 
 Les lecteurs réseau sont connectés par GPO (préférences de lecteur, ciblées par groupe
 global). Ce point est détaillé dans le guide de configuration des serveurs.
